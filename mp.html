@@ -1,0 +1,1953 @@
+<title>Maquette des accidents</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout : maquette 3D isométrique plein écran, HUD flottant en haut, fiche de données à droite (feuille basse sur mobile) */
+:root{
+  --bg:#E6ECF4; --bg2:#F4F7FB; --ink:#172A56; --muted:#5A6684; --panel:#FFFFFF; --line:#D6DDE9;
+  --accent:#B7001C; --teal:#007E7A; --blue:#005DAD; --chip:#EDF1F7; --shadow:0 18px 50px -18px rgba(23,42,86,.35);
+  --display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"Figtree","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0B1222; --bg2:#121C33; --ink:#E7ECF6; --muted:#97A3BD; --panel:#141E36; --line:#27334F;
+  --accent:#FF4F61; --teal:#35B9B1; --blue:#5AA5F0; --chip:#1C2742; --shadow:0 18px 50px -18px rgba(0,0,0,.7); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B1222; --bg2:#121C33; --ink:#E7ECF6; --muted:#97A3BD; --panel:#141E36; --line:#27334F;
+  --accent:#FF4F61; --teal:#35B9B1; --blue:#5AA5F0; --chip:#1C2742; --shadow:0 18px 50px -18px rgba(0,0,0,.7); color-scheme:dark}
+html,body{height:100%}
+body{background:radial-gradient(120% 90% at 30% 10%,var(--bg2),var(--bg));color:var(--ink);font-family:var(--body);overflow:hidden}
+#stage{position:fixed;inset:0}
+#stage canvas{display:block;outline:none;touch-action:none}
+.hud{position:fixed;top:calc(env(safe-area-inset-top,0px) + 14px);left:max(16px,env(safe-area-inset-left,0px));right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-wrap:wrap;gap:12px 22px;align-items:flex-start;pointer-events:none;z-index:5}
+.hud > *{pointer-events:auto}
+.org{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:11.5px;line-height:1.25;color:var(--muted)}
+.org b{color:var(--ink);font-weight:700}
+.logo{background:#fff;border-radius:10px;padding:5px 8px;box-shadow:var(--shadow);display:flex}
+.logo img{height:46px;width:auto;display:block}
+.credit{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 14px);font-size:11px;color:var(--muted);z-index:4;text-align:right}
+.credit b{color:var(--ink)}
+body.pan .credit{display:none}
+.brand h1{font-family:var(--display);font-weight:800;font-size:clamp(20px,2.4vw,30px);line-height:1.02;letter-spacing:-.01em;margin:0;text-wrap:balance}
+.brand h1 span{color:var(--accent)}
+.brand p{margin:4px 0 0;font-size:12px;color:var(--muted);letter-spacing:.02em}
+.ctrl{display:flex;flex-direction:column;gap:8px;min-width:0;max-width:100%;flex:1 1 340px}
+.chips{display:flex;gap:4px;padding:4px;background:var(--panel);border:1px solid var(--line);border-radius:999px;box-shadow:var(--shadow);overflow-x:auto;max-width:100%;scrollbar-width:none}
+.chips button{font:600 12.5px var(--body);color:var(--muted);background:none;border:0;border-radius:999px;padding:6px 12px;cursor:pointer;white-space:nowrap;font-variant-numeric:tabular-nums}
+.chips button[aria-pressed="true"]{background:var(--ink);color:var(--panel)}
+.chips button:focus-visible,.tool:focus-visible,.hs:focus-visible,.close:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tools{display:flex;gap:6px;flex-wrap:wrap}
+.tool{font:600 12px var(--body);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;box-shadow:var(--shadow)}
+.tool[aria-pressed="true"]{background:var(--blue);border-color:var(--blue);color:#fff}
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:12px;width:min(290px,100%)}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:8px 12px 7px;box-shadow:var(--shadow);min-width:84px}
+.kpi b{display:block;font:800 22px/1 var(--display);font-variant-numeric:tabular-nums}
+.kpi small{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.kpi.red b{color:var(--accent)} .kpi.teal b{color:var(--teal)} .kpi.blue b{color:var(--blue)}
+.hint{position:fixed;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 14px);font-size:11.5px;color:var(--muted);z-index:4;max-width:min(420px,calc(100% - 32px));line-height:1.4}
+.hint b{color:var(--ink)}
+/* marqueurs */
+#marks{position:fixed;inset:0;pointer-events:none;z-index:3}
+.hs{position:absolute;left:0;top:0;pointer-events:auto;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:0;padding:0;cursor:pointer;color:var(--ink);font-family:var(--body);will-change:transform;transition:opacity .4s}
+.hs .pin{position:relative;width:38px;height:38px;border-radius:50%;background:var(--panel);border:2px solid var(--ink);display:grid;place-items:center;box-shadow:0 8px 20px -8px rgba(0,0,0,.45);transition:transform .2s}
+.hs .pin svg{width:19px;height:19px;stroke:var(--ink);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.hs .ct{position:absolute;top:-8px;right:-14px;background:var(--accent);color:#fff;font:700 11px/1 var(--mono);padding:4px 6px;border-radius:999px;min-width:20px;text-align:center;font-variant-numeric:tabular-nums}
+.hs .lb{font:600 11px var(--body);background:var(--panel);border:1px solid var(--line);padding:2px 7px;border-radius:6px;white-space:nowrap;opacity:.92}
+.hs:hover .pin,.hs.on .pin{transform:scale(1.14)}
+.hs.on .pin{background:var(--ink)} .hs.on .pin svg{stroke:var(--panel)}
+.hs.dim{opacity:.35}
+/* fiche */
+.panel{position:fixed;top:calc(env(safe-area-inset-top,0px) + 14px);right:max(16px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 14px);width:min(400px,calc(100% - 32px));
+  background:var(--panel);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);z-index:8;display:flex;flex-direction:column;overflow:hidden;
+  transform:translateX(0);transition:transform .45s cubic-bezier(.2,.8,.2,1),opacity .3s}
+.panel.closed{transform:translateX(calc(100% + 40px));opacity:0;pointer-events:none}
+.ph{padding:18px 20px 12px;border-bottom:1px solid var(--line);position:relative}
+.eyebrow{font:500 11px var(--mono);text-transform:uppercase;letter-spacing:.09em;color:var(--accent)}
+.ph h2{font:800 24px/1.05 var(--display);margin:6px 0 0;text-wrap:balance;padding-right:30px}
+.close{position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;border:1px solid var(--line);background:var(--chip);color:var(--ink);font-size:18px;cursor:pointer;line-height:1}
+.pb{padding:14px 20px 22px;overflow-y:auto;display:flex;flex-direction:column;gap:16px}
+.big{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap}
+.big b{font:800 46px/.9 var(--display);font-variant-numeric:tabular-nums}
+.big span{font-size:13px;color:var(--muted);max-width:28ch;line-height:1.35}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.duo div{background:var(--chip);border-radius:12px;padding:10px 12px}
+.duo b{font:800 22px/1 var(--display);display:block;font-variant-numeric:tabular-nums}
+.duo small{font-size:11.5px;color:var(--muted)}
+.insight{font-size:13.5px;line-height:1.5;margin:0;color:var(--ink)}
+.insight strong{color:var(--accent)}
+.sec h3{font:600 11px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 8px}
+.br{display:grid;grid-template-columns:minmax(0,9.5em) 1fr auto;gap:8px;align-items:center;font-size:12.5px;margin:5px 0}
+.bl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bt{height:10px;background:var(--chip);border-radius:6px;overflow:hidden}
+.bt i{display:block;height:100%;background:var(--ink);border-radius:6px;transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.bt i.hot{background:var(--accent)} .bt i.tl{background:var(--teal)}
+.bv{font:500 12px var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right;min-width:4.6em}
+.bv em{font-style:normal;color:var(--muted)}
+.rt{display:inline-block;margin-left:6px;font:600 10.5px var(--body);color:var(--accent)}
+.reco{background:color-mix(in srgb,var(--teal) 12%,transparent);border-left:3px solid var(--teal);border-radius:0 12px 12px 0;padding:10px 12px;font-size:12.8px;line-height:1.45}
+.reco b{color:var(--teal);display:block;font:600 11px var(--mono);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px}
+.cols{display:flex;align-items:flex-end;gap:6px;height:130px;padding-top:16px}
+.cols .c{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end;min-width:0}
+.cols .stk{width:100%;display:flex;flex-direction:column-reverse;border-radius:6px 6px 2px 2px;overflow:hidden;transition:height .6s}
+.cols .stk i{display:block}
+.cols .v{font:600 11px var(--mono)} .cols .k{font-size:10.5px;color:var(--muted)}
+.legend{display:flex;gap:12px;font-size:11px;color:var(--muted);flex-wrap:wrap}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+.heat{width:100%;border-collapse:separate;border-spacing:3px;font-size:11.5px}
+.heat th{font:500 10.5px var(--mono);color:var(--muted);text-align:center;font-weight:500}
+.heat th:first-child{text-align:left}
+.heat td{text-align:center;padding:6px 2px;border-radius:6px;font:600 11px var(--mono);color:#1b1b1b}
+.heat td:first-child{text-align:left;font:500 12px var(--body);color:var(--ink);background:none!important}
+.note{font-size:11px;color:var(--muted);line-height:1.4;margin:0}
+.types{display:flex;gap:4px;margin-top:8px;flex-wrap:wrap}
+.type{font:600 11px var(--body);border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:6px;padding:4px 8px}
+.type.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.type:disabled{opacity:.75;cursor:not-allowed}
+.type em{font-style:normal;font:500 9.5px var(--mono);text-transform:uppercase;margin-left:3px}
+.tool.alert{display:inline-flex;align-items:center;gap:6px;border-color:var(--accent)}
+.tool.alert b{background:var(--accent);color:#fff;border-radius:999px;padding:1px 7px;font:700 11px var(--mono)}
+.tool.alert .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:blink 1.4s infinite}
+@keyframes blink{50%{opacity:.25}}
+.src{margin:0;font-size:11px;color:var(--muted)}
+.hs .al{position:absolute;bottom:-4px;left:-6px;width:14px;height:14px;border-radius:50%;border:2px solid var(--panel);display:none}
+.hs .al.crit{display:block;background:var(--accent);animation:blink 1.2s infinite}
+.hs .al.warn{display:block;background:#E0A100}
+.hs .al.info{display:block;background:var(--blue)}
+.alist{display:flex;flex-direction:column;gap:8px}
+.al-item{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;text-align:left;background:var(--chip);border:1px solid transparent;border-radius:12px;padding:10px 12px;cursor:pointer;color:var(--ink);font-family:var(--body)}
+.al-item:hover{border-color:var(--line)}
+.al-item .lv{grid-row:span 2;font:700 9.5px var(--mono);text-transform:uppercase;letter-spacing:.06em;padding:3px 6px;border-radius:6px;align-self:start;color:#fff}
+.lv.crit{background:var(--accent)} .lv.warn{background:#B57F00} .lv.info{background:var(--blue)}
+.al-item strong{font-size:13.5px} .al-item span{font-size:12.3px;color:var(--muted);line-height:1.4}
+.al-sum{display:flex;gap:6px;flex-wrap:wrap}
+.al-sum span{font:600 11.5px var(--body);padding:4px 9px;border-radius:999px;background:var(--chip)}
+.cmpctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:12.5px}
+.cmpctl select{font:600 13px var(--body);color:var(--ink);background:var(--chip);border:1px solid var(--line);border-radius:8px;padding:5px 8px}
+.cmpctl label{display:flex;align-items:center;gap:5px;color:var(--muted)}
+.ctab{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+.ctab th{font:500 10.5px var(--mono);color:var(--muted);text-align:right;padding:4px 4px;text-transform:uppercase}
+.ctab th:first-child,.ctab td:first-child{text-align:left}
+.ctab td{padding:6px 4px;border-top:1px solid var(--line);text-align:right}
+.dl{font:700 11.5px var(--mono);white-space:nowrap}
+.dl.up{color:var(--accent)} .dl.down{color:var(--teal)} .dl.eq{color:var(--muted)}
+.dual{display:grid;grid-template-columns:minmax(0,8.5em) 1fr auto;gap:2px 8px;align-items:center;font-size:12px;margin:6px 0}
+.dual .bl{grid-row:span 2}
+.dual .bt{height:7px}
+.dual .bt i.a{background:var(--muted);opacity:.55}
+.dual .vals{grid-row:span 2;font:500 11.5px var(--mono);text-align:right;white-space:nowrap}
+.mtx{border-collapse:separate;border-spacing:2px}
+.mtx td{text-align:center!important;font:600 11px var(--mono);border-radius:5px;border-top:0;color:#1b1b1b}
+.mtx td:first-child{font:500 12px var(--body);color:var(--ink);background:none!important;text-align:left!important}
+.spark{display:flex;align-items:flex-end;gap:5px;height:64px}
+.spark .c{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;height:100%;justify-content:flex-end}
+.spark .c i{display:block;width:100%;background:var(--blue);border-radius:4px 4px 1px 1px}
+.spark .c.cur i{background:var(--accent)}
+.spark .c span{font:600 10.5px var(--mono)} .spark .c small{font-size:10px;color:var(--muted)}
+.hs .ct.up{background:var(--accent)} .hs .ct.down{background:var(--teal)} .hs .ct.eq{background:var(--muted)}
+.seg{display:flex;gap:4px;background:var(--chip);padding:3px;border-radius:999px;width:max-content;max-width:100%}
+.seg button{font:600 12px var(--body);border:0;background:none;color:var(--muted);padding:5px 12px;border-radius:999px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--panel)}
+.frow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.dsel{display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:4px 5px 4px 12px;box-shadow:var(--shadow);font:600 12px var(--body);color:var(--muted)}
+.dsel select{font:600 12.5px var(--body);color:var(--ink);background:var(--chip);border:0;border-radius:999px;padding:5px 8px;max-width:260px}
+.type[data-mode]{cursor:pointer}
+.drop{position:fixed;inset:0;z-index:20;display:grid;place-items:center;background:color-mix(in srgb,var(--bg) 80%,transparent);border:3px dashed var(--accent);font:800 22px var(--display);color:var(--ink);pointer-events:none}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 18px);transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:10px 16px;border-radius:12px;font-size:13px;z-index:30;max-width:min(560px,calc(100% - 32px));box-shadow:var(--shadow)}
+@media (max-width:760px){
+  .kpis{grid-template-columns:repeat(4,minmax(0,1fr));width:100%;margin-top:8px}
+  .brand{width:100%}
+  .kpi{flex:1;min-width:0;padding:6px 8px}
+  .kpi b{font-size:18px}
+  .kpi small{font-size:9.5px}
+  .panel{top:auto;height:58%;width:auto;left:max(10px,env(safe-area-inset-left,0px));right:max(10px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 10px)}
+  .panel.closed{transform:translateY(calc(100% + 30px))}
+  .hs .lb{display:none}
+  .hs .pin{width:32px;height:32px} .hs .pin svg{width:16px;height:16px}
+  .hint{display:none}
+  .src{display:none}
+  .credit{display:none}
+  .logo img{height:36px}
+}
+@media (min-width:761px){body.pan .hud{right:calc(400px + 40px)}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div id="stage" aria-label="Maquette 3D interactive des accidents"></div>
+<div id="marks"></div>
+
+<header class="hud">
+  <div class="brand">
+    <div class="org"><span class="logo"><img id="logo" alt="Ville de Champigny-sur-Marne"></span><span>Direction des ressources humaines<br><b>Service prévention</b></span></div>
+    <h1 id="h1">Trajets <span>à risque</span></h1>
+    <p id="sub">Accidents de trajet · Ville de Champigny-sur-Marne</p>
+    <div class="types" role="group" aria-label="Type d'évènement">
+      <button class="type on" data-mode="trajet" aria-pressed="true">Accidents de trajet</button>
+      <button class="type" data-mode="service" aria-pressed="false">Accidents de travail</button>
+      <button class="type" data-mode="mp" aria-pressed="false">Maladies professionnelles</button>
+    </div>
+    <div class="kpis" id="kpis"></div>
+  </div>
+  <div class="ctrl">
+    <div class="frow"><div class="chips" id="years" role="group" aria-label="Année"></div><label class="dsel"><span>Direction</span><select id="dirSel" aria-label="Filtrer par direction"></select></label></div>
+    <div class="tools">
+      <button class="tool alert" id="alertsBtn"><span class="dot"></span>Alertes <b id="alertN">0</b></button>
+      <button class="tool" id="cmpBtn" aria-pressed="false" title="Comparer les années ou les directions">Comparer</button>
+      <button class="tool" id="importBtn">Importer un export Ciril</button>
+      <input type="file" id="file" accept=".xls,.xlsx,.xml,.csv" hidden>
+      <button class="tool" id="winter" aria-pressed="false">Mode hiver</button>
+      <button class="tool" id="spin" aria-pressed="false">Rotation</button>
+      <button class="tool" id="reset">Vue d'ensemble</button>
+    </div>
+    <p class="src" id="src"></p>
+  </div>
+</header>
+
+<p class="hint"><b>Cliquez un point</b> pour ouvrir ses chiffres. Glissez pour tourner la maquette, molette ou pincement pour zoomer. Données anonymisées issues de grdInfos (Ciril).</p>
+<p class="credit">Réalisation : <b>Direction des ressources humaines · Service prévention</b><br>Ville de Champigny-sur-Marne</p>
+
+<aside class="panel closed" id="panel" aria-live="polite">
+  <div class="ph"><div class="eyebrow" id="pEy"></div><h2 id="pTi"></h2><button class="close" id="close" aria-label="Fermer la fiche">×</button></div>
+  <div class="pb" id="pBody"></div>
+</aside>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+const nb = n => Number(n).toLocaleString('fr-FR');
+const pc = (a, b) => b ? Math.round(100 * a / b) + ' %' : '–';
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ================================================================ MOTEUR DE DONNÉES
+   Lignes anonymisées : une par déclaration. Même format pour les données d'exemple
+   (extraction grdInfos du 22/10/2026) et pour un export Ciril importé dans la page. */
+const KEYS_T = ['d', 'sexe', 'age', 'statut', 'cat', 'filiere', 'mode', 'circ', 'heure', 'sens', 'lesion', 'zone', 'arret', 'ag', 'delai', 'eLoco', 'eCause', 'eRecit', 'eLes', 'struct', 'requal'];
+const EMB = [];
+const AGES = ['Moins de 30 ans', '30-39 ans', '40-49 ans', '50-59 ans', '60 ans et +'];
+const TRANCHES_H = ['Avant 7h', '7h-9h30 (prise de poste)', '9h30-12h', '12h-14h30 (pause méridienne)', '14h30-17h', '17h-19h30 (fin de poste)', 'Après 19h30', 'Non renseignée'];
+const JOURS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+const MODES = ['À pied', 'Voiture', 'Transport en commun', 'Vélo', 'Trottinette', 'Deux-roues motorisé', 'Autre', 'Non renseigné'];
+const CIRCS = ['Défaut ou obstacle de voirie', 'Verglas / neige', 'Collision avec un véhicule', 'Incident en transport en commun', 'Chute sans cause précisée', 'Freinage / évitement (2-roues)', 'Sol mouillé', 'Escaliers / marches', 'Agression', 'Malaise / cause médicale', 'Autre', 'Récit non renseigné'];
+const LESIONS = ['Douleurs', 'Contusions', 'Entorse', 'Fracture', 'Troubles psychologiques', 'Polytraumatisme', 'Autres', 'Non renseignée'];
+const ZONES = ['Membres inférieurs', 'Membres supérieurs', 'Dos / tronc / bassin', 'Tête / cou', 'Autre / multiple', 'Non renseigné'];
+const FILIERES = ['Technique / entretien / restauration', 'Administratif', 'Petite enfance / social / santé', 'Animation / éducation / sport', 'Culture / patrimoine', 'Autres (non classés, apprentis)'];
+const STATUTS = ['Fonctionnaire (CNRACL)', 'Contractuel / régime général'];
+const SAISONS = ['Hiver (déc-fév)', 'Printemps (mars-mai)', 'Été (juin-août)', 'Automne (sept-nov)'];
+
+const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+const FAM = { 'adjoints techniques': 0, 'agents de maitrise': 0, 'techniciens territoriaux': 0, 'ingenieurs': 0, "adjoints d'animation": 3, 'animateurs territoriaux': 3, 'a.t.s.e.m.': 3,
+  'educateurs territoriaux a.p.s': 3, 'auxiliaires de puericulture': 2, 'agents sociaux': 2, 'auxiliaires de soins': 2, 'infirmiers en soins generaux': 2, 'puericultrices territoriales': 2,
+  'medecins': 2, 'conseillers socio-educatifs': 2, 'redacteurs territoriaux': 1, 'adjoints administratifs': 1, 'attaches': 1, 'professeurs enseignement art.': 4, 'assistants de conservation': 4,
+  'adjoints du patrimoine': 4, 'bibliothecaires': 4, 'conservateurs bibliotheques': 4, 'attaches cons. du patrimoine': 4 };
+const MAPM = { 'pedestre': 'À pied', 'tc bus': 'Transport en commun', 'tc train': 'Transport en commun', 'vehicule personnel': 'Voiture', 'vehicule de fonction': 'Voiture', 'bicyclette': 'Vélo', 'trotinette': 'Trottinette', 'trottinette': 'Trottinette', 'velomoteur, moto': 'Deux-roues motorisé' };
+const MODE_KW = [['trottinette', 'Trottinette'], ['velo', 'Vélo'], ['moto', 'Deux-roues motorisé'], ['dans le bus', 'Transport en commun'], ['en bus', 'Transport en commun'], ['du bus', 'Transport en commun'], ['escalator', 'Transport en commun'], ['gare', 'Transport en commun'], ['voiture', 'Voiture'], ['vehicule', 'Voiture'], ['constat', 'Voiture'], ['a pied', 'À pied'], ['marchant', 'À pied'], ['trottoir', 'À pied'], ['chaussee', 'À pied'], ['verglas', 'À pied'], ['enneige', 'À pied'], ['trebuch', 'À pied'], ['glisse', 'À pied'], ['tordu', 'À pied'], ['escalier', 'À pied'], ['chut', 'À pied'], ['tomb', 'À pied']];
+const DEPART = 'quittant son domicile|sortant de son domicile|sortant du parking du domicile|partant de son domicile|sortait de chez';
+function tranche(h) {
+  const m = /^(\d{1,2}):(\d{2})/.exec(String(h || '').trim()); if (!m || m[0] === '00:00') return 'Non renseignée';
+  const x = +m[1] + m[2] / 60;
+  return x < 7 ? TRANCHES_H[0] : x < 9.5 ? TRANCHES_H[1] : x < 12 ? TRANCHES_H[2] : x < 14.5 ? TRANCHES_H[3] : x < 17 ? TRANCHES_H[4] : x < 19.5 ? TRANCHES_H[5] : TRANCHES_H[6];
+}
+function circ(t) {
+  if (!t) return 'Récit non renseigné';
+  const T = [[/agress|coup de poing/, 'Agression'], [/percut|collision|heurte par|camion/, 'Collision avec un véhicule'], [/verglas|neige|enneige/, 'Verglas / neige'],
+    [/trou|denivel|racine|butee|rebord|non lineaire|morceau de bois|panneau|feuilles mortes|branche/, 'Défaut ou obstacle de voirie'], [/mouill|pluie/, 'Sol mouillé'],
+    [/bus|escalator|escalier mecanique|gare/, 'Incident en transport en commun'], [/escalier|marche/, 'Escaliers / marches'], [/frein|evit/, 'Freinage / évitement (2-roues)'],
+    [/perdu connaissance|raideur|malaise/, 'Malaise / cause médicale'], [/gliss|trebuch|chut|tomb|equilibre|tordu/, 'Chute sans cause précisée']];
+  for (const [re, l] of T) if (re.test(t)) return l; return 'Autre';
+}
+function sens(t, h) {
+  if (/rentr|vers son domicile|sers son domicile|a son domicile|travail-domicile|retour/.test(t) && !new RegExp(DEPART).test(t)) return 'Retour';
+  if (new RegExp('lieu de travail|son travail|au travail|prendre (ses fonctions|son poste)|se rendre|se diriger|se dirigeant|domicile-travail|domicile lieu|' + DEPART + '|arrivant').test(t)) return 'Aller';
+  const m = /^(\d{1,2}):(\d{2})/.exec(String(h || '')); if (m && m[0] !== '00:00') { if (+m[1] < 11) return 'Aller'; if (+m[1] >= 15) return 'Retour'; }
+  return 'Indéterminé';
+}
+function zone(s) {
+  s = norm(s); if (!s.trim()) return 'Non renseigné';
+  if (/tete|cou|crane|visage|oeil|nez|joue|machoire/.test(s)) return ZONES[3];
+  if (/dos|lombaire|colonne|thorax|abdomen|hanche|bassin|cotes|tronc/.test(s)) return ZONES[2];
+  if (/epaule|bras|coude|poignet|main|doigt|membres sup/.test(s)) return ZONES[1];
+  if (/genou|jambe|cheville|pied|orteil|cuisse|membres inf/.test(s)) return ZONES[0];
+  return ZONES[4];
+}
+function toDate(v) {
+  if (v instanceof Date) return v;
+  if (typeof v === 'number') return new Date(Math.round((v - 25569) * 864e5));
+  const s = String(v || '').trim(); let m;
+  if ((m = /^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/.exec(s))) return new Date(+(m[3].length === 2 ? '20' + m[3] : m[3]), m[2] - 1, +m[1]);
+  if ((m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s))) return new Date(+m[1], m[2] - 1, +m[3]);
+  return null;
+}
+const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const empty = v => String(v ?? '').trim() === '';
+/* Transforme les lignes brutes d'un export Ciril / grdInfos en lignes anonymisées */
+function deriveT(raw) {
+  const col = name => { const k = Object.keys(raw[0] || {}).find(c => norm(c).trim() === norm(name)); return k; };
+  const need = ['Date accident', 'Sexe', 'Age', 'Statut de paie', "Type d'évènement"];
+  const missing = need.filter(n => !col(n));
+  if (missing.length) throw new Error('Colonnes introuvables : ' + missing.join(', ') + '. Utilisez l\'export « Synthèse des données » de grdInfos.');
+  const K = n => col(n);
+  const types = {}; raw.forEach(r => { const t = String(r[K("Type d'évènement")] || 'Non précisé').trim(); types[t] = (types[t] || 0) + 1; });
+  const ids = {}; let nid = 0;
+  const rows = [];
+  raw.forEach(r => {
+    if (!/trajet/i.test(r[K("Type d'évènement")] || '')) return;
+    const d = toDate(r[K('Date accident')]); if (!d) return;
+    const t = norm(r[K('Nature accident')]).trim();
+    const locoRaw = norm(r[K('Moyen de locomotion')]).trim();
+    let mode = MAPM[locoRaw];
+    if (!mode) { mode = (MODE_KW.find(([k]) => t.includes(k)) || [])[1] || (locoRaw === 'autre' ? 'Autre' : 'Non renseigné'); }
+    const cadre = norm(r[K("Cadre d'emploi")]).trim();
+    const sd = toDate(r[K('Date de saisie')]);
+    const mat = String(r[K('Matricule')] || r[K('Nom')] || Math.random()); if (!(mat in ids)) ids[mat] = nid++;
+    const n1 = String(r[K('Nature 1')] || '').trim();
+    const catS = String(r[K('Catégorie statutaire')] || '');
+    rows.push([iso(d), String(r[K('Sexe')] || '').trim() || 'Non renseigné', parseInt(r[K('Age')]) || 0,
+      String(r[K('Statut de paie')] || '').trim() === 'CNR' ? STATUTS[0] : STATUTS[1],
+      /Catégorie ([ABC])/i.test(catS) ? catS.match(/Catégorie ([ABC])/i)[1].toUpperCase() : 'Hors cat.',
+      FILIERES[FAM[cadre] ?? 5], mode, circ(t), tranche(r[K('Heure accident')]), sens(t, r[K('Heure accident')]),
+      n1 ? n1.replace('Autres (à préciser)', 'Autres') : 'Non renseignée', zone(r[K('Siège 1')]),
+      /avec/i.test(r[K('Conséquence')] || '') ? 1 : 0, ids[mat], sd ? Math.round((sd - d) / 864e5) : 0,
+      +empty(r[K('Moyen de locomotion')]), +empty(r[K('Facteur/Cause')]), +empty(r[K('Nature accident')]), +empty(r[K('Nature 1')]),
+      String(r[K('Structure')] || '').trim(), +/vestiaire|enceinte|en arrivant a l|l'autre ecole|apres sa formation|\bcti\b/.test(t)]);
+  });
+  return { rows, types };
+}
+
+let ROWS = [], DATA = null, year = 'all', SOURCE = '';
+let MODE = 'trajet', dirFilter = 'all', introT0 = 0;
+let HS, badge, FICHES, BADGE_LABEL, IND;
+const S = () => DATA.scopes[year];
+const yearLabel = () => year === 'all' ? `${DATA.years[0]?.y ?? ''} → ${DATA.years.at(-1)?.y ?? ''}` : year;
+const fr = d => d.toLocaleDateString('fr-FR');
+const ALL = { trajet: [], service: [], mp: [] }, SRCS = { trajet: '', service: '', mp: '' };
+function load(arr, label, mode = MODE) {
+  const K = ENG[mode].KEYS;
+  ALL[mode] = arr.map(a => { const o = Object.fromEntries(K.map((k, i) => [k, a[i]])); o.date = toDate(o.d); o.y = o.date.getFullYear(); o.m = o.date.getMonth();
+    o.doy = Math.floor((o.date - new Date(o.y, 0, 0)) / 864e5); o.jour = JOURS[(o.date.getDay() + 6) % 7];
+    o.saison = [0, 1, 11].includes(o.m) ? SAISONS[0] : o.m <= 4 ? SAISONS[1] : o.m <= 7 ? SAISONS[2] : SAISONS[3];
+    o.tage = o.age < 30 ? AGES[0] : o.age < 40 ? AGES[1] : o.age < 50 ? AGES[2] : o.age < 60 ? AGES[3] : AGES[4];
+    if (mode === 'trajet') o.dir = dirOf(o.struct)[0]; else o.statut = o.statut === 'F' ? STATUTS[0] : o.statut === 'C' ? STATUTS[1] : o.statut;
+    return o; }).sort((a, b) => a.date - b.date);
+  SRCS[mode] = label;
+  if (mode === MODE && DATA) applyFilter();
+}
+function applyFilter() {
+  let rows = ALL[MODE].filter(r => dirFilter === 'all' || r.dir === dirFilter);
+  if (!rows.length) { dirFilter = 'all'; rows = ALL[MODE]; }
+  ROWS = rows; SOURCE = SRCS[MODE]; DATA = build(ROWS); if (!DATA.scopes[year]) year = 'all';
+}
+const cnt = (x, f, order) => Object.fromEntries(order.map(k => [k, x.filter(r => r[f] === k).length]));
+const rate = (x, f, order) => Object.fromEntries(order.map(k => { const g = x.filter(r => r[f] === k); return [k, [g.length, g.filter(r => r.arret).length]]; }));
+function scopeT(x) {
+  const known = x.filter(r => r.circ !== 'Récit non renseigné');
+  const two = x.filter(r => ['Vélo', 'Trottinette', 'Deux-roues motorisé'].includes(r.mode));
+  const vo = x.filter(r => r.circ === 'Défaut ou obstacle de voirie');
+  const agents = {}; x.forEach(r => agents[r.ag] = (agents[r.ag] || 0) + 1);
+  return { n: x.length, arret: x.filter(r => r.arret).length, age: x.length ? Math.round(10 * x.reduce((s, r) => s + r.age, 0) / x.length) / 10 : 0, known: known.length,
+    sexe: rate(x, 'sexe', ['Femme', 'Homme']), ages: rate(x, 'tage', AGES), statut: rate(x, 'statut', STATUTS), cat: rate(x, 'cat', ['A', 'B', 'C', 'Hors cat.']),
+    filiere: rate(x, 'filiere', FILIERES), mode: rate(x, 'mode', MODES), dirc: rate(x, 'dir', DIRCODES), circ: cnt(x, 'circ', CIRCS), heure: cnt(x, 'heure', TRANCHES_H), sens: rate(x, 'sens', ['Aller', 'Retour', 'Indéterminé']),
+    jour: cnt(x, 'jour', JOURS), mois: [...Array(12)].map((_, m) => x.filter(r => r.m === m).length), saison: cnt(x, 'saison', SAISONS),
+    lesion: cnt(x, 'lesion', LESIONS), zone: cnt(x, 'zone', ZONES), twoArret: [two.length, two.filter(r => r.arret).length],
+    voirieLes: Object.fromEntries(Object.entries(cnt(vo, 'lesion', LESIONS)).filter(([, v]) => v)),
+    verglasArret: x.filter(r => r.circ === 'Verglas / neige' && r.arret).length,
+    multiAgents: Object.values(agents).filter(v => v > 1).length, multiRows: Object.values(agents).filter(v => v > 1).reduce((a, b) => a + b, 0),
+    rows: x };
+}
+function median(a) { if (!a.length) return 0; const s = [...a].sort((p, q) => p - q), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; }
+function build(rows) {
+  const ys = [...new Set(rows.map(r => r.y))].sort();
+  const SC = E().scope, scopes = { all: SC(rows) }; ys.forEach(y => scopes[y] = SC(rows.filter(r => r.y === y)));
+  const last = rows.at(-1).date, lastY = last.getFullYear(), lim = rows.filter(r => r.y === lastY).reduce((m, r) => Math.max(m, r.doy), 0);
+  const years = ys.map(y => { const x = rows.filter(r => r.y === y);
+    return { y, n: x.length, arret: x.filter(r => r.arret).length, same: x.filter(r => r.doy <= lim).length, sameExJan: x.filter(r => r.doy <= lim && r.m !== 0).length,
+      verglas: x.filter(r => r.circ === 'Verglas / neige').length }; });
+  const QF = E().qf, qof = x => { const o = {}; Object.entries(QF).forEach(([lab, f]) => o[lab] = x.reduce((t, r) => t + r[f], 0) / (x.length || 1)); o.delai = median(x.map(r => r.delai)); return o; };
+  const quality = Object.fromEntries(ys.map(y => [y, qof(rows.filter(r => r.y === y))])); quality.all = qof(rows);
+  const D = { meta: { first: fr(rows[0].date), last: fr(last), lastY, lim }, scopes, years, quality };
+  D.alerts = Object.fromEntries(Object.keys(scopes).map(k => [k, E().detect(D, k)]));
+  return D;
+}
+
+/* ================================================================ ALERTES
+   Règles tirées de l'analyse 2022-2026. Niveaux : crit (agir), warn (surveiller), info (vérifier). */
+function clusters(x, win = 8, minN = 5) {
+  const out = []; let i = 0;
+  while (i < x.length) {
+    let j = i; while (j + 1 < x.length && (x[j + 1].date - x[i].date) / 864e5 < win) j++;
+    if (j - i + 1 >= minN) { out.push(x.slice(i, j + 1)); i = j + 1; } else i++;
+  }
+  return out;
+}
+function detectT(D, key) {
+  const s = D.scopes[key], x = s.rows, A = [], base = D.scopes.all;
+  if (!x.length) return A;
+  const add = (lvl, hs, title, text) => A.push({ lvl, hs, title, text });
+  // 1. séries d'accidents rapprochés
+  clusters(x).forEach(c => {
+    const v = c.filter(r => r.circ === 'Verglas / neige').length, w = c.filter(r => r.saison === SAISONS[0]).length;
+    add('crit', v >= c.length / 3 || w === c.length ? 'verglas' : 'horloge', `Série de ${c.length} accidents en ${Math.round((c.at(-1).date - c[0].date) / 864e5) + 1} jours`,
+      `Du ${fr(c[0].date)} au ${fr(c.at(-1).date)}${v ? `, dont ${v} lié${v > 1 ? 's' : ''} au verglas ou à la neige d'après le récit` : ''}. Un épisode de ce type justifie un plan d'alerte météo pour les trajets.`);
+  });
+  // 2. hausse à date égale
+  const Y = D.years, iy = Y.findIndex(y => String(y.y) === String(key === 'all' ? D.meta.lastY : key));
+  if (iy > 0 && Y[iy - 1].same >= 5) {
+    const cur = Y[iy], prev = Y[iy - 1], ev = cur.same / prev.same - 1;
+    if (ev >= .25) add(ev >= .5 ? 'crit' : 'warn', 'horloge', `Hausse de ${Math.round(ev * 100)} % sur un an`,
+      `${cur.y} : ${cur.same} accidents au ${fr(new Date(cur.y, 0, D.meta.lim))}, contre ${prev.same} un an plus tôt. Sans le mois de janvier : ${cur.sameExJan} contre ${prev.sameExJan}.`);
+    if (ev <= -.25) add('info', 'horloge', `Baisse de ${Math.round(-ev * 100)} % sur un an`, `${cur.y} : ${cur.same} accidents contre ${prev.same} sur la même période de ${prev.y}.`);
+  }
+  // 3. pic mensuel
+  const months = {}; base.rows.forEach(r => { const k = r.y * 12 + r.m; months[k] = (months[k] || 0) + 1; });
+  const span = Object.keys(months).length ? (Math.max(...Object.keys(months)) - Math.min(...Object.keys(months)) + 1) : 1, avg = base.n / span;
+  Object.entries(months).forEach(([k, v]) => { const y = Math.floor(k / 12), m = k % 12;
+    if ((key === 'all' || String(y) === String(key)) && v >= Math.max(5, 3 * avg))
+      add('warn', 'horloge', `Pic en ${new Date(y, m, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}`, `${v} accidents ce mois-ci, contre ${avg.toFixed(1).replace('.', ',')} par mois en moyenne.`); });
+  // 4. populations avec une part d'arrêt élevée
+  const gr = s.n ? s.arret / s.n : 0;
+  [['sexe', 'travail', ''], ['tage', 'travail', ''], ['cat', 'travail', 'Catégorie '], ['filiere', 'travail', ''], ['mode', null, '']].forEach(([f, hs, pre]) => {
+    const groups = {}; x.forEach(r => (groups[r[f]] = groups[r[f]] || []).push(r));
+    Object.entries(groups).forEach(([k, g]) => { if (g.length < 8 || /Non renseign|Autre/.test(k)) return; const r = g.filter(z => z.arret).length / g.length;
+      if (r >= gr + .15) add('warn', hs || ({ 'Voiture': 'carrefour', 'Transport en commun': 'bus', 'À pied': 'voirie' }[k] || 'velo'), `Arrêts fréquents : ${pre}${k}`,
+        `${Math.round(r * 100)} % des accidents donnent lieu à un arrêt (${g.length} cas), contre ${Math.round(gr * 100)} % en moyenne.`); });
+  });
+  if (s.twoArret[0] >= 4 && s.twoArret[1] / s.twoArret[0] >= gr + .15) add('warn', 'velo', 'Deux-roues : accidents graves', `${pc(s.twoArret[1], s.twoArret[0])} des ${s.twoArret[0]} accidents à vélo, trottinette ou moto donnent lieu à un arrêt.`);
+  // 5. causes liées au sol
+  const sol = s.circ['Défaut ou obstacle de voirie'] + s.circ['Verglas / neige'] + s.circ['Sol mouillé'];
+  if (s.known >= 8 && sol / s.known >= .4) add('warn', 'voirie', `${pc(sol, s.known)} des chutes liées au sol`, `Défauts de voirie (${s.circ['Défaut ou obstacle de voirie']}), verglas ou neige (${s.circ['Verglas / neige']}), sol mouillé (${s.circ['Sol mouillé']}). Signaler les lieux aux services voirie et espaces verts.`);
+  const voGrave = (s.voirieLes['Entorse'] || 0) + (s.voirieLes['Fracture'] || 0);
+  if (voGrave >= 2) add('warn', 'voirie', `${voGrave} entorses ou fractures dues à la voirie`, 'Les défauts de voirie causent les lésions les plus sérieuses. Vérifier les abords des sites municipaux concernés.');
+  // 6. agressions
+  if (s.circ['Agression']) add('crit', 'bus', `${s.circ['Agression']} agression${s.circ['Agression'] > 1 ? 's' : ''} sur le trajet`, 'Contacter chaque agent concerné sous 48 h : soutien psychologique, dépôt de plainte, protection fonctionnelle si l\'agression est liée aux fonctions.');
+  // 7. lésions graves
+  const grave = s.lesion['Fracture'] + s.lesion['Polytraumatisme'];
+  if (grave >= 3) add('warn', 'sante', `${grave} fractures ou polytraumatismes`, 'Suivre la reprise de ces agents et étudier un aménagement temporaire du poste.');
+  // 8. agents accidentés plusieurs fois
+  if (s.multiAgents) add('warn', 'travail', `${s.multiAgents} agent${s.multiAgents > 1 ? 's' : ''} accidenté${s.multiAgents > 1 ? 's' : ''} plusieurs fois`, `${s.multiRows} déclarations les concernent. Proposer un entretien de prévention avec la médecine préventive (itinéraire, chaussures, vue, équilibre).`);
+  // 9. structures concentrant les accidents
+  const st = {}; x.forEach(r => { if (r.struct) st[r.struct] = (st[r.struct] || 0) + 1; });
+  const thr = key === 'all' ? 5 : 3;
+  Object.entries(st).filter(([, v]) => v >= thr).sort((a, b) => b[1] - a[1]).slice(0, 4).forEach(([k, v]) =>
+    add('warn', 'travail', `${v} accidents : ${k.toLowerCase().replace(/(^|\s)\S/g, c => c.toUpperCase())}`, 'Structure au-dessus du seuil d\'alerte. Faire un point avec l\'encadrant sur les horaires, les accès au site et les trajets des agents.'));
+  // 10. requalification possible
+  const rq = x.filter(r => r.requal);
+  if (rq.length) add('info', 'domicile', `${rq.length} déclaration${rq.length > 1 ? 's' : ''} à requalifier ?`, `Le récit décrit des faits survenus sur un site (vestiaire, escalier d'un établissement) ou entre deux lieux de travail. Ce sont peut-être des accidents de service. Dates : ${rq.map(r => fr(r.date)).join(', ')}.`);
+  // 11. qualité de saisie
+  const q = D.quality[key];
+  if (q['Facteur / cause'] >= .5) add('warn', 'archives', `Cause non renseignée dans ${Math.round(q['Facteur / cause'] * 100)} % des cas`, 'Sans cause saisie, impossible de cibler les actions ni de mesurer leur effet. Rendre le champ obligatoire avec une liste fermée.');
+  if (q['Moyen de locomotion'] >= .5) add('warn', 'archives', `Mode de déplacement absent (${Math.round(q['Moyen de locomotion'] * 100)} %)`, 'Le champ « Moyen de locomotion » n\'est plus rempli. Il est ici reconstitué à partir du récit quand c\'est possible.');
+  if (q['Récit'] >= .3) add('info', 'archives', `${Math.round(q['Récit'] * 100)} % des déclarations sans récit`, 'Exiger au moins une phrase décrivant les circonstances.');
+  if (q.delai > 15) add('warn', 'archives', `Saisie tardive : ${Math.round(q.delai)} jours en médiane`, 'Délai réglementaire : 15 jours pour déclarer un accident d\'un fonctionnaire CNRACL, 48 h pour la déclaration à la CPAM des agents du régime général.');
+  const neg = x.filter(r => r.delai < 0).length;
+  if (neg) add('info', 'archives', `${neg} date${neg > 1 ? 's' : ''} incohérente${neg > 1 ? 's' : ''}`, 'Date de saisie antérieure à la date de l\'accident : vérifier la date saisie.');
+  // 12. saisonnalité et profil (lecture)
+  if (s.n >= 15 && s.saison[SAISONS[0]] / s.n >= .4) add('info', 'verglas', `L'hiver concentre ${pc(s.saison[SAISONS[0]], s.n)} des accidents`, 'Programmer les actions de sensibilisation en novembre, avant les premiers épisodes de froid.');
+  if (s.n >= 15 && s.sexe['Femme'][0] / s.n >= .7) add('info', 'travail', `${pc(s.sexe['Femme'][0], s.n)} des victimes sont des femmes`, 'À comparer avec la part des femmes dans les effectifs (RSU) avant de conclure à une sur-exposition.');
+  const ord = { crit: 0, warn: 1, info: 2 }; return A.sort((a, b) => ord[a.lvl] - ord[b.lvl]);
+}
+
+/* ---------------------------------------------------------------- scène */
+const stage = $('#stage');
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+stage.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+const gT = new THREE.Group(), gS = new THREE.Group(); scene.add(gT); scene.add(gS); gS.visible = false;
+let ROOT = gT;
+const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 400);
+const HOME = { pos: new THREE.Vector3(42, 40, 42), target: new THREE.Vector3(-2.5, 0, -2.5), zoom: 1 };
+camera.position.copy(HOME.pos);
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.target.copy(HOME.target);
+Object.assign(controls, { enableDamping: true, dampingFactor: .08, enablePan: false, minZoom: .6, maxZoom: 3.4, minPolarAngle: .5, maxPolarAngle: 1.17, autoRotateSpeed: .6 });
+
+const hemi = new THREE.HemisphereLight(0xffffff, 0xc9d3e0, 1);
+scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xffffff, 1.1);
+sun.position.set(18, 40, 8); sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -30, right: 30, top: 30, bottom: -30, near: 1, far: 100 });
+sun.shadow.bias = -0.0005;
+scene.add(sun);
+
+function resize() {
+  const w = stage.clientWidth, h = stage.clientHeight, a = w / h;
+  renderer.setSize(w, h);
+  const hw = Math.max(26, 19 * a), hh = hw / a;
+  Object.assign(camera, { left: -hw, right: hw, top: hh, bottom: -hh });
+  camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize);
+
+/* palettes jour / nuit */
+const PAL = {
+  light: { ground: '#F8FAFD', side: '#D5DDE8', road: '#5B6377', walk: '#E3E8F0', grass: '#D5E8D7', snowGrass: '#EEF3F9', mark: '#FFFFFF', bike: '#8CCFC8',
+    wall: '#FFFFFF', win: '#A8CBEA', winE: 0, bulbE: .15, hemi: [0xffffff, 0xc9d3e0, 1.0], sun: [0xffffff, 1.15], tree: '#7DB88A' },
+  dark: { ground: '#27324B', side: '#161E35', road: '#151B2A', walk: '#36425E', grass: '#203F3A', snowGrass: '#3B4762', mark: '#7F8AA2', bike: '#22625D',
+    wall: '#D8DEEA', win: '#FFCF73', winE: 1.1, bulbE: 2.4, hemi: [0x5a6a92, 0x0b1020, .62], sun: [0x9fb4ff, .38], tree: '#3E7A57' },
+};
+const isDark = () => { const t = document.documentElement.dataset.theme; return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; };
+
+const mats = {};
+const M = (key, color, extra = {}) => mats[key] || (mats[key] = new THREE.MeshStandardMaterial({ color, roughness: .85, metalness: 0, ...extra }));
+const fixed = c => new THREE.MeshStandardMaterial({ color: c, roughness: .8 });
+const tm = {
+  ground: M('ground', PAL.light.ground), side: M('side', PAL.light.side), road: M('road', PAL.light.road), walk: M('walk', PAL.light.walk),
+  grass: M('grass', PAL.light.grass), mark: M('mark', PAL.light.mark), bike: M('bike', PAL.light.bike), wall: M('wall', PAL.light.wall),
+  win: M('win', PAL.light.win, { emissive: new THREE.Color('#FFB347'), emissiveIntensity: 0 }),
+  bulb: M('bulb', '#FFF4D6', { emissive: new THREE.Color('#FFD27F'), emissiveIntensity: .15 }), tree: M('tree', PAL.light.tree),
+};
+const C = { navy: fixed('#172A56'), red: fixed('#B7001C'), teal: fixed('#007E7A'), blue: fixed('#005DAD'), grey: fixed('#9AA5B8'), dark: fixed('#2B3142'),
+  trunk: fixed('#8A6A4F'), orange: fixed('#F07A1A'), yellow: fixed('#F2B632'), snow: fixed('#FFFFFF'), glass: new THREE.MeshStandardMaterial({ color: '#BFD9F2', transparent: true, opacity: .55, roughness: .2 }) };
+
+const intro = []; // groupes animés à l'apparition
+function box(w, h, d, mat, x, y, z, parent = ROOT) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  m.position.set(x, y + h / 2, z); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m;
+}
+function cyl(rt, rb, h, mat, x, y, z, parent = scene, seg = 16) {
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), mat);
+  m.position.set(x, y + h / 2, z); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m;
+}
+function group(x, z, delay, hotspot) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); ROOT.add(g);
+  if (hotspot) g.userData.hotspot = hotspot;
+  intro.push({ g, delay, root: ROOT }); return g;
+}
+
+/* plateau */
+box(38, 1.4, 28, tm.side, 0, -1.4, 0).receiveShadow = true;
+box(38, .02, 28, tm.ground, 0, 0, 0);
+// pelouses
+[[-13, -8.5, 11, 8], [13, -8.5, 11, 8], [-13, 9.5, 11, 7.5], [13, 9.5, 11, 7.5], [-4, -9, 6, 8], [-3, 9.5, 6, 7.5]].forEach(([x, z, w, d]) => box(w, .06, d, tm.grass, x, 0, z));
+// voies
+box(38, .08, 5, tm.road, 0, 0, 0);
+box(4, .08, 28, tm.road, 4, 0, 0);
+[[-8.5, 21], [12.5, 13]].forEach(([cx, w]) => {
+  box(w, .18, 1.8, tm.walk, cx, 0, -3.4);   // trottoir nord
+  box(w, .1, 1, tm.bike, cx, 0, 3);        // piste cyclable
+  box(w, .18, 1.8, tm.walk, cx, 0, 4.4);    // trottoir sud
+});
+for (let x = -18; x < 19; x += 2.6) if (x < 1 || x > 7) box(1.3, .02, .16, tm.mark, x, .08, 0);
+for (let z = -12.5; z < 13; z += 2.6) if (z < -3 || z > 3) box(.16, .02, 1.3, tm.mark, 4, .08, z);
+for (let z = -2; z <= 2.01; z += .8) box(1.5, .02, .38, tm.mark, .9, .08, z);       // passage piéton ouest
+for (let x = 2.4; x <= 5.61; x += .8) box(.38, .02, 1.5, tm.mark, x, .08, -5.2);    // passage piéton nord
+for (let x = 2.4; x <= 5.61; x += .8) box(.38, .02, 1.5, tm.mark, x, .08, 5.6);     // passage piéton sud
+for (let x = -17; x < 19; x += 1.6) if (x < 1.5 || x > 6.5) box(.5, .02, .08, tm.mark, x, .11, 3); // pointillés vélo
+
+/* éléments de décor */
+const sway = [];
+function tree(x, z, s = 1, parent = ROOT) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); parent.add(g);
+  cyl(.12 * s, .16 * s, 1 * s, C.trunk, 0, 0, 0, g, 8);
+  const f = new THREE.Mesh(new THREE.IcosahedronGeometry(.85 * s, 0), tm.tree); f.position.y = 1.55 * s; f.castShadow = true; g.add(f);
+  sway.push({ g, p: Math.random() * 6 }); intro.push({ g, delay: .9 + Math.random() * .4, root: ROOT }); return g;
+}
+const lamps = [];
+function lamp(x, z) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); ROOT.add(g);
+  cyl(.06, .08, 3.2, C.dark, 0, 0, 0, g, 8);
+  box(.7, .08, .14, C.dark, .3, 3.2, 0, g);
+  const b = new THREE.Mesh(new THREE.SphereGeometry(.16, 12, 8), tm.bulb); b.position.set(.6, 3.12, 0); g.add(b);
+  const pl = new THREE.PointLight(0xffd27f, 0, 7, 2); pl.position.set(.6, 3, 0); g.add(pl); lamps.push(pl);
+  intro.push({ g, delay: .7, root: ROOT });
+}
+[-15, -7, 9, 16].forEach(x => { lamp(x, -4.3); lamp(x + 3, 5.2); });
+const snowCaps = [];
+function windows(g, w, h, d, rows, cols, y0 = .6) {
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    const yy = y0 + r * ((h - y0 - .4) / Math.max(rows, 1));
+    box(.04, .5, .55, tm.win, w / 2 + .01, yy, -d / 2 + (c + .5) * d / cols, g);
+    box(.55, .5, .04, tm.win, -w / 2 + (c + .5) * w / cols, yy, d / 2 + .01, g);
+  }
+}
+function cap(g, w, d, y) { const m = box(w + .1, .14, d + .1, C.snow, 0, y, 0, g); m.visible = false; snowCaps.push(m); }
+
+/* 1 · Domicile (quartier pavillonnaire) */
+const gHome = group(-13, -8.5, .15, 'domicile');
+[[-2.4, -1.8, C.red], [2.2, 1.4, C.navy], [-2.3, 2.4, C.teal]].forEach(([x, z, roofM], i) => {
+  const h = new THREE.Group(); h.position.set(x, 0, z); gHome.add(h);
+  box(3, 2.1, 2.8, tm.wall, 0, 0, 0, h);
+  const roof = new THREE.Mesh(new THREE.ConeGeometry(2.35, 1.3, 4), roofM); roof.rotation.y = Math.PI / 4; roof.position.y = 2.75; roof.castShadow = true; h.add(roof);
+  const sc = new THREE.Mesh(new THREE.ConeGeometry(2.0, .9, 4), C.snow); sc.rotation.y = Math.PI / 4; sc.position.y = 3.05; sc.visible = false; h.add(sc); snowCaps.push(sc);
+  box(.05, 1.1, .6, C.navy, 1.51, 0, .6, h);
+  windows(h, 3, 2.1, 2.8, 1, 2, .9);
+});
+tree(-16.5, -5.6, .9); tree(-10, -11.5, 1.1); tree(-9, -6, .8);
+
+/* 2 · Horloge (calendrier) */
+const gClock = group(-4, -9.5, .35, 'horloge');
+box(1.6, 6.2, 1.6, tm.wall, 0, 0, 0, gClock);
+box(2, .35, 2, C.navy, 0, 6.2, 0, gClock);
+const spire = new THREE.Mesh(new THREE.ConeGeometry(1.2, 1.4, 4), C.red); spire.rotation.y = Math.PI / 4; spire.position.y = 7.25; spire.castShadow = true; gClock.add(spire);
+const hands = [];
+[[.82, 0, 0, 0, Math.PI / 2], [0, 0, .82, Math.PI / 2, 0]].forEach(([x, , z, rx, ry]) => {
+  const face = new THREE.Mesh(new THREE.CylinderGeometry(.6, .6, .06, 28), fixed('#FFFFFF')); face.position.set(x, 5, z);
+  face.rotation.set(rx, 0, ry ? Math.PI / 2 : 0); if (z) face.rotation.set(Math.PI / 2, 0, 0); gClock.add(face);
+  const hg = new THREE.Group(); hg.position.set(x ? x + .05 : 0, 5, z ? z + .05 : 0); if (x) hg.rotation.y = Math.PI / 2; gClock.add(hg);
+  const h1 = new THREE.Mesh(new THREE.BoxGeometry(.06, .45, .03), C.navy); h1.position.y = .2; const p1 = new THREE.Group(); p1.add(h1); hg.add(p1);
+  const h2 = new THREE.Mesh(new THREE.BoxGeometry(.05, .32, .03), C.red); h2.position.y = .14; const p2 = new THREE.Group(); p2.add(h2); hg.add(p2);
+  hands.push([p1, p2]);
+});
+tree(-6, -6.5, .7); tree(-1.7, -12, .8);
+
+/* 3 · Lieu de travail (hôtel de ville) */
+const gWork = group(13, -8.5, .5, 'travail');
+box(8, 4.2, 5.2, tm.wall, 0, 0, 0, gWork);
+box(8.4, .35, 5.6, C.navy, 0, 4.2, 0, gWork); cap(gWork, 8.4, 5.6, 4.55);
+box(3, 1.3, 3, tm.wall, 0, 4.55, 0, gWork); box(3.2, .25, 3.2, C.red, 0, 5.85, 0, gWork);
+for (let i = -1.5; i <= 1.51; i += 1) box(.28, 2.4, .28, tm.wall, 4.3, 0, i, gWork);
+box(.9, .2, 4, C.navy, 4.4, 2.4, 0, gWork);
+windows(gWork, 8, 4.2, 5.2, 2, 4, .9);
+cyl(.05, .05, 3, C.dark, -3.2, 4.55, 2.2, gWork, 6);
+const flag = box(1.2, .7, .03, C.red, -2.6, 6.8, 2.2, gWork);
+const LOGO = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iOTYiIHZpZXdCb3g9IjAgMCAyNDAgOTYiPjxyZWN0IHdpZHRoPSIyNDAiIGhlaWdodD0iOTYiIHJ4PSIxNCIgZmlsbD0iIzE3MkE1NiIvPjx0ZXh0IHg9IjEyMCIgeT0iNDQiIGZpbGw9IiNmZmYiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyMiIgZm9udC13ZWlnaHQ9IjcwMCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+RFJIPC90ZXh0Pjx0ZXh0IHg9IjEyMCIgeT0iNzIiIGZpbGw9IiNmZmYiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+U2VydmljZSBwcsOpdmVudGlvbjwvdGV4dD48L3N2Zz4=';
+document.getElementById('logo').src = LOGO;
+(() => { const img = new Image(); img.onload = () => {
+  const cv = document.createElement('canvas'); cv.width = 640; cv.height = 300; const g = cv.getContext('2d');
+  g.fillStyle = '#fff'; g.fillRect(0, 0, 640, 300); g.drawImage(img, 20, 0, 600, 298);
+  const tex = new THREE.CanvasTexture(cv); tex.anisotropy = 4;
+  [[0, 5.2, 1.52, 0], [1.52, 5.2, 0, Math.PI / 2]].forEach(([x, y, z, ry]) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(2.7, 1.26), new THREE.MeshBasicMaterial({ map: tex })); m.position.set(x, y, z); m.rotation.y = ry; gWork.add(m); });
+  const big = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 1.97), new THREE.MeshBasicMaterial({ map: tex })); big.position.set(0, 2.95, 2.62); gWork.add(big);
+}; img.src = LOGO; })();
+tree(8, -12, .9); tree(18, -5.6, .8);
+
+/* 4 · École / crèche (décor du lieu de travail) */
+const gSchool = group(13, 9.8, .6, 'travail');
+box(6.5, 2.6, 4.2, tm.wall, 0, 0, 0, gSchool);
+box(6.9, .3, 4.6, C.teal, 0, 2.6, 0, gSchool); cap(gSchool, 6.9, 4.6, 2.9);
+windows(gSchool, 6.5, 2.6, 4.2, 1, 4, .9);
+box(.3, 1.6, 6, C.yellow, -4.2, 0, 0, gSchool).scale.set(1, .5, 1);
+tree(17.5, 12.5, .8); tree(9, 12.8, .7);
+
+/* 5 · Santé */
+const gHealth = group(-13, 9.5, .7, 'sante');
+box(5, 2.8, 4.4, tm.wall, 0, 0, 0, gHealth);
+box(5.3, .3, 4.7, C.navy, 0, 2.8, 0, gHealth); cap(gHealth, 5.3, 4.7, 3.1);
+box(.06, 1.2, .38, C.red, 2.53, 1.1, 0, gHealth); box(.06, .38, 1.2, C.red, 2.53, 1.51, 0, gHealth);
+box(1.3, .08, .4, C.red, 0, 3.1, 0, gHealth); box(.4, .08, 1.3, C.red, 0, 3.1, 0, gHealth);
+windows(gHealth, 5, 2.8, 4.4, 1, 3, 1);
+tree(-17, 12.5, .8); tree(-9.6, 12.7, .7);
+
+/* 6 · Archives (qualité des données) */
+const gArch = group(-3, 10, .8, 'archives');
+box(4, 2.2, 3, tm.wall, 0, 0, 0, gArch);
+box(4.3, .25, 3.3, C.blue, 0, 2.2, 0, gArch); cap(gArch, 4.3, 3.3, 2.45);
+[[0, C.navy], [.3, C.teal], [.6, C.red], [.9, C.yellow]].forEach(([y, m], i) => box(.9, .28, 1.2, m, 2.7, y, -.6 + (i % 2) * .15, gArch));
+windows(gArch, 4, 2.2, 3, 1, 2, .8);
+
+/* 7 · Arrêt de bus */
+const gBus = group(11, -3.5, .55, 'bus');
+box(3, .1, 1.2, C.navy, 0, 2.3, -.1, gBus); cap(gBus, 3, 1.2, 2.4);
+box(3, 2.1, .06, C.glass, 0, .2, -.65, gBus);
+cyl(.05, .05, 2.3, C.dark, -1.45, .18, .45, gBus, 6); cyl(.05, .05, 2.3, C.dark, 1.45, .18, .45, gBus, 6);
+box(2.2, .12, .45, C.trunk, 0, .6, -.35, gBus);
+box(.5, .5, .06, C.blue, -1.9, 2, .4, gBus); cyl(.04, .04, 2, C.dark, -1.9, .18, .4, gBus, 6);
+
+/* 8 · Carrefour : feux */
+const gLight = group(1.7, -2.9, .65, 'carrefour');
+cyl(.08, .08, 3, C.dark, 0, .18, 0, gLight, 8);
+box(.4, 1.1, .4, C.dark, 0, 3.1, 0, gLight);
+const lampsTL = ['#E5332A', '#F2B632', '#2DBE6C'].map((c, i) => {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(.12, 10, 8), new THREE.MeshStandardMaterial({ color: '#333', emissive: new THREE.Color(c), emissiveIntensity: 0 }));
+  m.position.set(.21, 3.95 - i * .33, 0); gLight.add(m); return m;
+});
+const gLight2 = group(6.3, 2.9, .65, 'carrefour');
+cyl(.08, .08, 3, C.dark, 0, .18, 0, gLight2, 8); box(.4, 1.1, .4, C.dark, 0, 3.1, 0, gLight2);
+const lampsTL2 = ['#E5332A', '#F2B632', '#2DBE6C'].map((c, i) => {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(.12, 10, 8), new THREE.MeshStandardMaterial({ color: '#333', emissive: new THREE.Color(c), emissiveIntensity: 0 }));
+  m.position.set(0, 3.95 - i * .33, .21); gLight2.add(m); return m;
+});
+
+/* 9 · Verglas (trottoir nord) */
+const gIce = group(-4.5, -3.4, .75, 'verglas');
+const ice = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, .03, 32), new THREE.MeshStandardMaterial({ color: '#BFE6FA', transparent: true, opacity: .8, roughness: .05, metalness: .2 }));
+ice.scale.set(1.3, 1, .55); ice.position.y = .2; ice.receiveShadow = true; gIce.add(ice);
+const sign = new THREE.Mesh(new THREE.CylinderGeometry(.42, .42, .05, 3), C.red); sign.rotation.set(Math.PI / 2, 0, Math.PI / 2); sign.position.set(-2.1, 1.75, -.7); gIce.add(sign);
+cyl(.04, .04, 1.5, C.dark, -2.1, .18, -.72, gIce, 6);
+
+/* 10 · Défaut de voirie (trottoir sud) */
+const gHole = group(-10, 4.4, .8, 'voirie');
+const hole = new THREE.Mesh(new THREE.CylinderGeometry(.6, .5, .05, 7), C.dark); hole.position.y = .19; hole.scale.set(1.4, 1, .9); gHole.add(hole);
+[[-.8, .3, .4], [.9, -.25, -.35]].forEach(([x, z, r]) => { const s = box(.7, .1, .6, tm.walk, x, .2, z, gHole); s.rotation.set(r * .4, r, r * .3); });
+[[-1.5, -.3], [1.6, .4]].forEach(([x, z]) => { cyl(.02, .22, .55, C.orange, x, .18, z, gHole, 12); box(.4, .05, .4, C.orange, x, .18, z, gHole); });
+const root = new THREE.Mesh(new THREE.TorusGeometry(.5, .07, 6, 10, Math.PI), C.trunk); root.position.set(2.8, .2, -.6); root.rotation.x = -Math.PI / 2; gHole.add(root);
+tree(-7.2, 5.8, .8);
+
+/* ---------------------------------------------------------------- personnages et véhicules */
+const PALP = ['#172A56', '#B7001C', '#007E7A', '#005DAD', '#E0A100', '#7A4FA3', '#C25E7A', '#4D9DE0'];
+function person(color, parent) {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(.2, .26, .9, 10), fixed(color)); body.position.y = .55; body.castShadow = true; g.add(body);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(.2, 12, 10), fixed('#E9C1A0')); head.position.y = 1.2; head.castShadow = true; g.add(head);
+  (parent || ROOT).add(g); return g;
+}
+const peds = [];
+for (let i = 0; i < 9; i++) {
+  const north = i % 2 === 0, g = person(PALP[i % PALP.length]);
+  peds.push({ g, z: north ? -3.4 + (i % 3 - 1) * .35 : 4.5 + (i % 3 - 1) * .3, x: -18 + i * 4.3, dir: i % 3 === 0 ? -1 : 1, sp: 1.1 + (i % 4) * .18, north, ev: 0, ph: Math.random() * 6 });
+}
+function car(color, len = 2.2) {
+  const g = new THREE.Group();
+  const b = new THREE.Mesh(new THREE.BoxGeometry(len, .65, 1.15), fixed(color)); b.position.y = .55; b.castShadow = true; g.add(b);
+  const c = new THREE.Mesh(new THREE.BoxGeometry(len * .55, .5, 1.02), C.glass); c.position.set(-len * .05, 1.1, 0); g.add(c);
+  const r = new THREE.Mesh(new THREE.BoxGeometry(len * .55, .06, 1.04), fixed(color)); r.position.set(-len * .05, 1.37, 0); g.add(r);
+  [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, s]) => { const w = new THREE.Mesh(new THREE.CylinderGeometry(.22, .22, .16, 12), C.dark); w.rotation.x = Math.PI / 2; w.position.set(a * len * .32, .25, s * .55); g.add(w); });
+  ROOT.add(g); return g;
+}
+function bus() {
+  const g = new THREE.Group();
+  const b = new THREE.Mesh(new THREE.BoxGeometry(6, 1.9, 1.5), fixed('#005DAD')); b.position.y = 1.25; b.castShadow = true; g.add(b);
+  const s = new THREE.Mesh(new THREE.BoxGeometry(5.6, .6, 1.52), C.glass); s.position.set(.1, 1.55, 0); g.add(s);
+  const t = new THREE.Mesh(new THREE.BoxGeometry(6, .12, 1.5), fixed('#FFFFFF')); t.position.set(0, 2.25, 0); g.add(t);
+  [[-2, -1], [2, -1], [-2, 1], [2, 1]].forEach(([a, s2]) => { const w = new THREE.Mesh(new THREE.CylinderGeometry(.32, .32, .2, 14), C.dark); w.rotation.x = Math.PI / 2; w.position.set(a, .32, s2 * .72); g.add(w); });
+  ROOT.add(g); return g;
+}
+// voies : A (z=-1.25, +x), B (z=1.25, -x), C (x=3, +z), D (x=5, -z)
+const veh = [];
+const addV = (g, lane, s, len, isBus) => veh.push({ g, lane, s, v: 0, len, isBus: !!isBus, wait: 0 });
+addV(bus(), 'A', -14, 6, true);
+addV(car('#B7001C'), 'A', 2, 2.2); addV(car('#E9EDF3'), 'A', 10, 2.2);
+addV(car('#172A56'), 'B', 12, 2.2); addV(car('#E0A100'), 'B', 0, 2.2); addV(car('#007E7A'), 'B', -11, 2.2);
+addV(car('#7A4FA3'), 'C', -10, 2.2); addV(car('#9AA5B8'), 'D', 9, 2.2);
+const LANES = { A: { axis: 'x', c: -1.25, dir: 1, stop: 1.0, lim: 19.5 }, B: { axis: 'x', c: 1.25, dir: -1, stop: 7.0, lim: 19.5 },
+  C: { axis: 'z', c: 3, dir: 1, stop: -3.2, lim: 14 }, D: { axis: 'z', c: 5, dir: -1, stop: 3.2, lim: 14 } };
+// cycliste + trottinette
+function rider(color, kind) {
+  const g = new THREE.Group(); ROOT.add(g);
+  const wheels = [];
+  if (kind === 'bike') {
+    [-.5, .5].forEach(x => { const w = new THREE.Mesh(new THREE.TorusGeometry(.32, .05, 6, 18), C.dark); w.position.set(x, .36, 0); g.add(w); wheels.push(w); });
+    const f = new THREE.Mesh(new THREE.BoxGeometry(1, .06, .06), fixed('#007E7A')); f.position.set(0, .6, 0); f.rotation.z = .25; g.add(f);
+  } else {
+    [-.4, .4].forEach(x => { const w = new THREE.Mesh(new THREE.TorusGeometry(.14, .04, 6, 14), C.dark); w.position.set(x, .16, 0); g.add(w); wheels.push(w); });
+    box(.9, .05, .2, C.dark, 0, .2, 0, g); cyl(.03, .03, 1, C.dark, .42, .2, 0, g, 6);
+  }
+  const p = person(color, g); p.position.set(kind === 'bike' ? -.1 : 0, kind === 'bike' ? .45 : .25, 0); p.scale.setScalar(.92);
+  return { g, wheels, kind };
+}
+const riders = [Object.assign(rider('#B7001C', 'bike'), { x: 8, sp: 3.1 }), Object.assign(rider('#172A56', 'scoot'), { x: -6, sp: 2.4 })];
+
+/* neige */
+const SN = 1400, snowGeo = new THREE.BufferGeometry(), snowPos = new Float32Array(SN * 3);
+for (let i = 0; i < SN; i++) { snowPos[i * 3] = (Math.random() - .5) * 38; snowPos[i * 3 + 1] = Math.random() * 20; snowPos[i * 3 + 2] = (Math.random() - .5) * 28; }
+snowGeo.setAttribute('position', new THREE.BufferAttribute(snowPos, 3));
+const snow = new THREE.Points(snowGeo, new THREE.PointsMaterial({ color: 0xffffff, size: .16, transparent: true, opacity: .9, depthWrite: false }));
+snow.visible = false; scene.add(snow);
+
+/* ---------------------------------------------------------------- hotspots */
+const ICONS_T = {
+  domicile: '<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',
+  verglas: '<path d="M12 2v20M4 6l16 12M20 6L4 18"/><path d="M9 3l3 3 3-3M9 21l3-3 3 3"/>',
+  voirie: '<path d="M12 3l9 17H3z"/><path d="M12 10v4M12 17v.5"/>',
+  carrefour: '<rect x="8" y="2" width="8" height="20" rx="3"/><circle cx="12" cy="7" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="17" r="1.5"/>',
+  bus: '<rect x="4" y="3" width="16" height="15" rx="3"/><path d="M4 11h16M7 21v-3M17 21v-3"/><circle cx="8" cy="14.5" r=".8"/><circle cx="16" cy="14.5" r=".8"/>',
+  velo: '<circle cx="6" cy="16" r="4"/><circle cx="18" cy="16" r="4"/><path d="M6 16l5-8h5l2 8M11 8l3 8M14 5h3"/>',
+  travail: '<path d="M3 21h18M5 21V9l7-5 7 5v12"/><path d="M9 21v-5h6v5M9 11h.01M15 11h.01"/>',
+  sante: '<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/>',
+  horloge: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  archives: '<path d="M4 4h6l2 2h8v13H4z"/><path d="M8 12h8M8 15h5"/>',
+};
+const HS_T = {
+  domicile: { label: 'Départ du domicile', pos: [-13, 5.2, -8.5] },
+  horloge: { label: 'Calendrier', pos: [-4, 9.4, -9.5] },
+  travail: { label: 'Hôtel de Ville et sites', pos: [13, 7.6, -8.5] },
+  bus: { label: 'Arrêt de bus', pos: [11, 3.6, -3.5] },
+  carrefour: { label: 'Carrefour', pos: [4, 2.6, 0] },
+  verglas: { label: 'Verglas', pos: [-4.5, 2.6, -3.4] },
+  voirie: { label: 'Trottoir dégradé', pos: [-10, 1.9, 4.4] },
+  velo: { label: 'Piste cyclable', pos: [-1.5, 2.3, 3] },
+  sante: { label: 'Conséquences', pos: [-13, 4.6, 9.5] },
+  archives: { label: 'Qualité des données', pos: [-3, 4, 10] },
+};
+const badge_T = {
+  domicile: s => s.sens['Aller'][0], horloge: s => s.n, travail: s => s.n, bus: s => s.mode['Transport en commun'][0],
+  carrefour: s => s.mode['Voiture'][0], verglas: s => s.circ['Verglas / neige'], voirie: s => s.circ['Défaut ou obstacle de voirie'],
+  velo: s => s.twoArret[0], sante: s => s.arret, archives: () => null,
+};
+const marks = $('#marks');
+const ringGeo = new THREE.RingGeometry(.8, 1, 40);
+function makeMarkers(H, ICN, root) { Object.entries(H).forEach(([id, h]) => {
+  h.v = new THREE.Vector3(...h.pos);
+  const b = document.createElement('button'); b.className = 'hs'; b.dataset.id = id; b.style.opacity = 0;
+  b.innerHTML = `<span class="pin"><svg viewBox="0 0 24 24" aria-hidden="true">${ICN[id]}</svg><span class="ct"></span><span class="al"></span></span><span class="lb">${h.label}</span>`;
+  b.setAttribute('aria-label', h.label); b.addEventListener('click', e => { e.stopPropagation(); open(id); });
+  marks.appendChild(b); h.el = b;
+  const ring = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: 0xB7001C, transparent: true, opacity: .5, side: THREE.DoubleSide, depthWrite: false }));
+  ring.rotation.x = -Math.PI / 2; ring.position.set(h.pos[0], .25, h.pos[2]); root.add(ring); h.ring = ring; h.ph = Math.random();
+}); }
+
+/* ---------------------------------------------------------------- thème */
+function applyTheme() {
+  const P = PAL[isDark() ? 'dark' : 'light'], w = winterOn;
+  tm.ground.color.set(w ? (isDark() ? '#3A4762' : '#F2F6FB') : P.ground); tm.side.color.set(P.side); tm.road.color.set(P.road);
+  tm.walk.color.set(w ? (isDark() ? '#4A5675' : '#EDF2F8') : P.walk); tm.grass.color.set(w ? P.snowGrass : P.grass); tm.mark.color.set(P.mark);
+  tm.bike.color.set(P.bike); tm.wall.color.set(P.wall); tm.win.color.set(P.win); tm.win.emissiveIntensity = P.winE; tm.tree.color.set(P.tree);
+  tm.bulb.emissiveIntensity = P.bulbE; lamps.forEach(l => l.intensity = isDark() ? 1.6 : 0);
+  hemi.color.set(P.hemi[0]); hemi.groundColor.set(P.hemi[1]); hemi.intensity = P.hemi[2]; sun.color.set(P.sun[0]); sun.intensity = P.sun[1];
+  [HS_T, HS_S, HS_M].forEach(H => Object.values(H).forEach(h => h.ring && h.ring.material.color.set(isDark() ? 0xFF4F61 : 0xB7001C)));
+}
+let winterOn = false;
+new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
+
+/* ---------------------------------------------------------------- interface */
+const yearsEl = $('#years');
+function buildYears() {
+  yearsEl.innerHTML = '';
+  ['all', ...Object.keys(DATA.scopes).filter(k => k !== 'all')].forEach(k => {
+    const b = document.createElement('button'); b.textContent = k === 'all' ? 'Toutes' : k; b.setAttribute('aria-pressed', String(k) === String(year));
+    b.onclick = () => { year = k; [...yearsEl.children].forEach(c => c.setAttribute('aria-pressed', c === b)); refresh(); };
+    yearsEl.appendChild(b);
+  });
+}
+const LV = { crit: 'Agir', warn: 'Surveiller', info: 'Vérifier' };
+function renderAlerts() {
+  const A = DATA.alerts[year], c = l => A.filter(a => a.lvl === l).length;
+  $('#pEy').textContent = `Alertes automatiques · ${yearLabel()}`; $('#pTi').textContent = A.length ? `${A.length} points d'attention` : 'Aucune anomalie détectée';
+  $('#pBody').innerHTML = `<div class="al-sum"><span style="color:var(--accent)">${c('crit')} à traiter</span><span>${c('warn')} à surveiller</span><span>${c('info')} à vérifier</span></div>
+    <p class="note">Les alertes portent sur les données affichées (type d'accident, direction, année) et suivent des règles issues des analyses 2022-2026 : hausses, pics, gravité, familles de risque, agressions, agents accidentés plusieurs fois, structures, qualité de saisie. Cliquez une alerte pour ouvrir la zone concernée.</p>
+    <div class="alist">${A.map((a, i) => `<button class="al-item" data-i="${i}"><span class="lv ${a.lvl}">${LV[a.lvl]}</span><strong>${a.title}</strong><span>${a.text}</span></button>`).join('')}</div>`;
+  $('#pBody').querySelectorAll('.al-item').forEach(b => b.onclick = () => open(A[b.dataset.i].hs));
+}
+function openAlerts() {
+  if (current === 'compare') { current = null; $('#cmpBtn').setAttribute('aria-pressed', 'false'); refresh(); } current = 'alerts'; renderAlerts(); panel.classList.remove('closed'); document.body.classList.add('pan'); $('#pBody').scrollTop = 0;
+  Object.values(HS).forEach(h => h.el.classList.remove('on', 'dim'));
+  flyTo(HOME.target.clone(), 1);
+}
+function refresh() {
+  const A = DATA.alerts[year];
+  $('#alertN').textContent = A.length;
+  $('#alertsBtn').querySelector('.dot').style.visibility = A.some(a => a.lvl === 'crit') ? 'visible' : 'hidden';
+  Object.entries(HS).forEach(([id, h]) => {
+    const mine = A.filter(a => a.hs === id), lvl = mine.find(a => a.lvl === 'crit') ? 'crit' : mine.find(a => a.lvl === 'warn') ? 'warn' : mine.length ? 'info' : '';
+    const el = h.el.querySelector('.al'); el.className = 'al ' + lvl; el.title = mine.length ? `${mine.length} alerte(s)` : '';
+  });
+  $('#src').textContent = `Source : ${SOURCE} · ${DATA.meta.first} → ${DATA.meta.last}`;
+  const s = S();
+  $('#kpis').innerHTML = E().kpis(s);
+  $('#sub').textContent = `${yearLabel()} · ${s.n} déclarations · ${dirFilter === 'all' ? 'toutes les directions' : dirFilter + ' · ' + (DIRS[dirFilter] ? DIRS[dirFilter][1] : '')}`;
+  let max = 1; const vals = {};
+  Object.keys(HS).forEach(id => { vals[id] = badge[id](s); if (vals[id] != null && !E().bigIds.includes(id)) max = Math.max(max, vals[id]); });
+  Object.entries(HS).forEach(([id, h]) => {
+    const v = vals[id], ct = h.el.querySelector('.ct');
+    if (id === 'archives') { ct.textContent = E().archBadge(DATA.quality[year]); ct.className = 'ct'; }
+    else { ct.textContent = v; ct.className = 'ct'; }
+    h.amp = E().bigIds.includes(id) ? 1.2 : .7 + 1.9 * Math.sqrt((v || 0) / max);
+  });
+  if (current === 'alerts') renderAlerts(); else if (current === 'compare') renderCompare(); else if (current) render(current);
+}
+
+/* fiches */
+function bars(entries, total, opt = {}) {
+  const max = Math.max(1, ...entries.map(e => e[1]));
+  return entries.map(([lab, n, ar]) => `<div class="br"><span class="bl" title="${lab}">${lab}</span><span class="bt"><i class="${opt.cls || ''}" style="width:${100 * n / max}%"></i></span><span class="bv">${n} <em>${pc(n, total)}</em>${opt.rate && n ? `<span class="rt">${pc(ar, n)} arrêt</span>` : ''}</span></div>`).join('');
+}
+const R = obj => Object.entries(obj).map(([k, [n, a]]) => [k, n, a]);
+const V = obj => Object.entries(obj).map(([k, n]) => [k, n]);
+const sec = (t, html) => `<div class="sec"><h3>${t}</h3>${html}</div>`;
+const reco = t => `<div class="reco"><b>Piste d'action</b>${t}</div>`;
+const MOIS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
+function months(arr, hot = []) {
+  const max = Math.max(1, ...arr);
+  return `<div class="cols" style="height:100px">${arr.map((v, i) => `<div class="c"><span class="v">${v || ''}</span><div class="stk" style="height:${70 * v / max}%"><i style="height:100%;background:${hot.includes(i) ? 'var(--accent)' : 'var(--blue)'}"></i></div><span class="k">${MOIS[i]}</span></div>`).join('')}</div>`;
+}
+const FICHES_T = {
+  domicile: s => {
+    const a = s.sens['Aller'][0], r = s.sens['Retour'][0], early = s.heure['Avant 7h'] + s.heure['7h-9h30 (prise de poste)'];
+    return { ey: 'Départ du domicile', ti: 'Le matin, en partant travailler', html:
+      `<div class="big"><b>${pc(a, a + r)}</b><span>des accidents surviennent à l'aller, quand le sens du trajet est connu</span></div>
+      <p class="insight"><strong>${pc(early, s.n)}</strong> des accidents ont lieu avant 9 h 30. Le matin, plusieurs facteurs se cumulent : peur d'être en retard, obscurité en hiver, trottoirs pas encore salés.</p>
+      ${sec('Sens du trajet', bars(R(s.sens), s.n, { rate: true }))}
+      ${sec("Heure de l'accident", bars(V(s.heure).filter(e => e[0] !== 'Non renseignée'), s.n, { cls: 'tl' }))}
+      ${sec('Jour de la semaine', bars(V(s.jour), s.n))}
+      ${reco("Pour les prises de poste avant 8 h, autoriser un retard sans pénalité les jours d'alerte verglas, et inclure le risque trajet dans le livret d'accueil sécurité.")}` };
+  },
+  verglas: s => {
+    const v = s.circ['Verglas / neige'];
+    return { ey: 'Verglas et neige', ti: 'Le risque saisonnier n° 1', html:
+      `<div class="big"><b>${v}</b><span>accidents dus au verglas ou à la neige, soit ${pc(v, s.known)} des récits exploitables</span></div>
+      ${(() => { const c = clusters(s.rows).sort((a, b) => b.length - a.length)[0];
+        return c ? `<p class="insight">Du ${fr(c[0].date)} au ${fr(c.at(-1).date)} : <strong>${c.length} accidents en ${Math.round((c.at(-1).date - c[0].date) / 864e5) + 1} jours</strong>. Un seul épisode de froid peut faire grimper le bilan de toute l'année.</p>`
+          : `<p class="insight">Les chutes sur verglas surviennent surtout à pied, le matin, sur les trottoirs et les parvis.</p>`; })()}
+      ${sec('Accidents par mois (toutes causes)', months(s.mois, [0, 1, 11]))}
+      ${sec('Saison', bars(V(s.saison), s.n))}
+      <div class="duo"><div><b>${v ? pc(s.verglasArret, v) : '–'}</b><small>avec arrêt de travail</small></div><div><b>${pc(s.saison['Hiver (déc-fév)'], s.n)}</b><small>des accidents l'hiver</small></div></div>
+      ${reco('Un plan grand froid pour les trajets : alerte la veille, horaires souples, salage prioritaire des accès aux écoles, crèches et cuisines, crampons pour les agents qui viennent à pied.')}` };
+  },
+  voirie: s => {
+    const v = s.circ['Défaut ou obstacle de voirie'], les = s.voirieLes;
+    return { ey: 'Trottoir dégradé', ti: 'Trous, racines, butées, dénivelés', html:
+      `<div class="big"><b>${v}</b><span>accidents liés à un défaut ou un obstacle de voirie, soit ${pc(v, s.known)} des récits exploitables</span></div>
+      <p class="insight">Les causes liées au sol (voirie, verglas, sol mouillé) représentent <strong>${pc(v + s.circ['Verglas / neige'] + s.circ['Sol mouillé'], s.known)}</strong> des récits. ${(() => { const g = s.lesion['Entorse'] + s.lesion['Fracture'], gv = (les['Entorse'] || 0) + (les['Fracture'] || 0);
+        return g ? `Les défauts de voirie causent <strong>${gv} des ${g} entorses et fractures</strong>.` : ''; })()}</p>
+      ${sec('Lésions causées par un défaut de voirie', v ? bars(V(les), v, { cls: 'hot' }) : '<p class="note">Aucun cas cette année.</p>')}
+      ${sec('Autres causes liées au sol', bars([['Verglas / neige', s.circ['Verglas / neige']], ['Sol mouillé', s.circ['Sol mouillé']], ['Escaliers / marches', s.circ['Escaliers / marches']]], s.known))}
+      ${reco("Transmettre la liste des lieux d'accidents aux services voirie et espaces verts, et ouvrir un circuit simple pour que les agents signalent un danger autour des sites municipaux.")}` };
+  },
+  carrefour: s => {
+    const [n, a] = s.mode['Voiture'];
+    return { ey: 'Carrefour', ti: 'En voiture', html:
+      `<div class="big"><b>${n}</b><span>accidents en voiture, dont ${pc(a, n)} avec arrêt</span></div>
+      <p class="insight">L'agent subit le plus souvent le choc : <strong>véhicule percuté à l'arrêt</strong> (feu rouge, rond-point), refus de priorité, sortie de stationnement. Les chocs par l'arrière donnent des douleurs aux cervicales.</p>
+      <div class="duo"><div><b>${s.circ['Collision avec un véhicule']}</b><small>collisions avec un véhicule (tous modes)</small></div><div><b>${pc(n, s.n)}</b><small>des accidents</small></div></div>
+      ${sec('Tous les modes de déplacement', bars(R(s.mode).filter(e => e[0] !== 'Non renseigné'), s.n, { rate: true }))}
+      ${reco('Rappeler la conduite défensive et les distances de sécurité, dans la continuité de la prévention du risque routier.')}` };
+  },
+  bus: s => {
+    const [n, a] = s.mode['Transport en commun'];
+    return { ey: 'Arrêt de bus', ti: 'Dans les transports en commun', html:
+      `<div class="big"><b>${n}</b><span>accidents en bus, train ou RER, dont ${pc(a, n)} avec arrêt</span></div>
+      <p class="insight">Chute à la montée ou à la descente du bus, freinage brusque, marches mouillées d'un escalator de gare. ${(() => { const f = s.rows.filter(r => r.mode === 'Transport en commun' && r.sexe === 'Femme').length; return n ? `<strong>${f} des ${n} victimes sont des femmes.</strong>` : ''; })()}</p>
+      <div class="duo"><div><b>${s.circ['Incident en transport en commun']}</b><small>incidents décrits en transport</small></div><div><b>${s.circ['Agression']}</b><small>agressions sur le trajet</small></div></div>
+      ${sec('Circonstances proches', bars([['Incident en transport en commun', s.circ['Incident en transport en commun']], ['Agression', s.circ['Agression']], ['Escaliers / marches', s.circ['Escaliers / marches']], ['Sol mouillé', s.circ['Sol mouillé']]], s.known))}
+      ${reco("Messages simples : se tenir dans le bus, ne pas courir pour l'attraper. Après une agression, contacter l'agent sous 48 h (soutien psychologique, dépôt de plainte, protection fonctionnelle si l'agression est liée aux fonctions).")}` };
+  },
+  velo: s => {
+    const [n, a] = s.twoArret;
+    return { ey: 'Piste cyclable', ti: 'À vélo, en trottinette, à moto', html:
+      `<div class="big"><b>${n}</b><span>accidents à deux-roues : vélo, trottinette ou moto</span></div>
+      <div class="duo"><div><b>${pc(a, n)}</b><small>avec arrêt, contre ${pc(s.arret, s.n)} tous modes confondus</small></div><div><b>${s.circ['Freinage / évitement (2-roues)']}</b><small>chutes en freinant ou en évitant un véhicule</small></div></div>
+      <p class="insight">Peu nombreux mais <strong>les plus graves en proportion</strong> : freins défaillants, feuilles mortes, voiture à éviter, rond-point.</p>
+      ${sec('Par engin', bars([['Vélo', ...s.mode['Vélo']], ['Trottinette', ...s.mode['Trottinette']], ['Deux-roues motorisé', ...s.mode['Deux-roues motorisé']]], n, { rate: true, cls: 'tl' }))}
+      ${reco("Avec le forfait mobilités durables, proposer des ateliers de remise en selle et une vérification gratuite de l'éclairage et des freins à l'automne.")}` };
+  },
+  travail: s => ({ ey: 'Lieu de travail', ti: 'Qui est concerné ?', html:
+      `<div class="big"><b>${s.n}</b><span>agents accidentés sur le trajet · âge moyen ${String(s.age).replace('.', ',')} ans</span></div>
+      <p class="insight">Profil type : <strong>une femme de 50 ans ou plus, en catégorie C</strong>, agent des écoles, de la restauration ou de l'entretien. Elle commence souvent tôt et vient à pied. Les hommes ont moins d'accidents mais plus d'arrêts.</p>
+      ${sec('Sexe', bars(R(s.sexe), s.n, { rate: true }))}
+      ${sec("Tranche d'âge", bars(R(s.ages), s.n, { rate: true }))}
+      ${sec('Statut', bars(R(s.statut).map(([k, n, a]) => [k.replace('Fonctionnaire (CNRACL)', 'Fonctionnaires').replace('Contractuel / régime général', 'Contractuels / RG'), n, a]), s.n, { rate: true }))}
+      ${sec('Catégorie', bars(R(s.cat), s.n, { rate: true }))}
+      ${sec('Famille de métier', bars(R(s.filiere), s.n, { rate: true, cls: 'tl' }))}
+      <p class="note">Ce sont des répartitions de déclarations. Pour parler de sur-exposition, il faut les rapporter aux effectifs du RSU.</p>` }),
+  sante: s => ({ ey: 'Conséquences', ti: 'Lésions et arrêts de travail', html:
+      `<div class="big"><b>${s.arret}</b><span>accidents avec arrêt de travail, soit ${pc(s.arret, s.n)} des déclarations</span></div>
+      <p class="insight">Des lésions typiques des chutes de plain-pied : on se tord la cheville, puis on tombe <strong>en se rattrapant sur les mains</strong>. Le risque d'arrêt augmente avec l'âge.</p>
+      ${sec('Nature de la lésion principale', bars(V(s.lesion).filter(e => e[1]), s.n, { cls: 'hot' }))}
+      ${sec('Zone du corps atteinte', bars(V(s.zone).filter(e => e[1]), s.n))}
+      ${sec("Part avec arrêt selon l'âge", bars(R(s.ages), s.n, { rate: true }))}` }),
+  horloge: s => {
+    const ys = DATA.years, max = Math.max(...ys.map(y => y.n));
+    return { ey: 'Calendrier', ti: 'Année par année', html:
+      `<div class="legend"><span><i style="background:var(--accent)"></i>avec arrêt</span><span><i style="background:var(--ink)"></i>sans arrêt</span><span><i style="background:var(--teal)"></i>au ${DATA.meta.last.slice(0, 5)} de chaque année</span></div>
+      <div class="cols">${ys.map(y => `<div class="c"><span class="v">${y.n}</span><div style="display:flex;gap:3px;width:100%;align-items:flex-end;height:100%">
+        <div class="stk" style="height:${85 * y.n / max}%;flex:1.4"><i style="height:${100 * y.arret / y.n}%;background:var(--accent)"></i><i style="height:${100 - 100 * y.arret / y.n}%;background:var(--ink)"></i></div>
+        <div class="stk" style="height:${85 * y.same / max}%;flex:1"><i style="height:100%;background:var(--teal)"></i></div></div><span class="k">${y.y}${y.y === 2022 ? '*' : y.y === 2026 ? '**' : ''}</span></div>`).join('')}</div>
+      ${(() => { const c = ys.at(-1), p = ys.at(-2); if (!p) return '';
+        const rest = ys.slice(-4, -1).map(y => y.n - y.same), proj = Math.round(c.n + rest.reduce((a, b) => a + b, 0) / (rest.length || 1));
+        return `<p class="insight">À date égale, ${c.y} compte <strong>${c.same} accidents</strong> contre ${p.same} en ${p.y}. Sans le mois de janvier : ${c.sameExJan} contre ${p.sameExJan}. Projection pour ${c.y} complète : environ ${proj}.</p>`; })()}
+      ${sec(`Mois · ${yearLabel()}`, months(s.mois))}
+      <p class="note">La première année de l'extraction peut être incomplète (saisies a posteriori). Dernière déclaration : ${DATA.meta.last}.</p>` };
+  },
+  archives: s => {
+    const q = DATA.quality, ys = Object.keys(q).filter(k => k !== 'all'), fields = ['Moyen de locomotion', 'Facteur / cause', 'Récit', 'Lésion'];
+    const col = v => `hsl(${120 - 120 * v} 65% ${isDark() ? 60 : 78}%)`;
+    return { ey: 'Qualité des données', ti: 'Ce que les déclarations ne disent pas', html:
+      `<div class="big"><b>${Math.round(q[year]['Facteur / cause'] * 100)} %</b><span>des déclarations (${yearLabel()}) n'ont pas de cause renseignée dans le champ « Facteur / cause »</span></div>
+      <p class="insight">Délai médian de saisie : <strong>${Math.round(q[ys[0]].delai)} jours en ${ys[0]}</strong>, ${Math.round(q[ys.at(-1)].delai)} jours en ${ys.at(-1)}. Un champ vide empêche de cibler les actions et d'en mesurer l'effet.</p>
+      ${sec('Part de champs vides', `<div style="overflow-x:auto"><table class="heat"><tr><th>Champ</th>${ys.map(y => `<th>${y}</th>`).join('')}</tr>${fields.map(f => `<tr><td>${f}</td>${ys.map(y => `<td style="background:${col(q[y][f])}">${Math.round(q[y][f] * 100)}</td>`).join('')}</tr>`).join('')}<tr><td>Délai médian (j)</td>${ys.map(y => `<td style="background:${col(Math.min(1, q[y].delai / 150))}">${Math.round(q[y].delai)}</td>`).join('')}</tr></table></div>`)}
+      ${reco("Rendre obligatoires dans grdInfos le moyen de déplacement, le sens du trajet, le lieu, un récit et une cause choisie dans une liste. Saisir aussi les jours d'arrêt.")}` };
+  },
+};
+let current = null;
+function render(id) {
+  const f = FICHES[id](S());
+  const mine = DATA.alerts[year].filter(a => a.hs === id);
+  const al = mine.length ? `<div class="alist">${mine.map(a => `<div class="al-item" style="cursor:default"><span class="lv ${a.lvl}">${LV[a.lvl]}</span><strong>${a.title}</strong><span>${a.text}</span></div>`).join('')}</div>` : '';
+  $('#pEy').textContent = `${f.ey} · ${yearLabel()}`; $('#pTi').textContent = f.ti; $('#pBody').innerHTML = al + f.html + spark(id);
+}
+/* évolution d'un point, année par année */
+const BADGE_LABEL_T = { domicile: "Accidents survenus à l'aller", horloge: 'Accidents déclarés', travail: 'Accidents déclarés', bus: 'Accidents en transport en commun',
+  carrefour: 'Accidents en voiture', verglas: 'Accidents liés au verglas ou à la neige', voirie: 'Accidents liés à un défaut de voirie', velo: 'Accidents à deux-roues', sante: 'Accidents avec arrêt de travail' };
+function spark(id) {
+  if (id === 'archives') return '';
+  const ys = Object.keys(DATA.scopes).filter(k => k !== 'all'), vals = ys.map(y => badge[id](DATA.scopes[y]) || 0), max = Math.max(1, ...vals);
+  return `<div class="sec"><h3>Évolution année par année · ${HS[id].label}</h3><div class="spark">${ys.map((y, i) => `<div class="c ${String(y) === String(year) ? 'cur' : ''}"><span>${vals[i]}</span><i style="height:${70 * vals[i] / max}%"></i><small>${y}</small></div>`).join('')}</div>
+    <p class="note">${BADGE_LABEL[id]}. Années complètes, sauf la dernière (au ${DATA.meta.last}). Le bouton « Comparer » permet une comparaison à date égale ou entre directions.</p></div>`;
+}
+
+/* ================================================================ COMPARAISON */
+const CMP = { a: null, b: null, same: true };
+function cmpScope(y) { return E().scope(ROWS.filter(r => String(r.y) === String(y) && (!CMP.same || r.doy <= DATA.meta.lim))); }
+const IND_T = [
+  ['Accidents déclarés', s => s.n, 'n', 1], ['Avec arrêt de travail', s => s.arret, 'n', 1], ['Part avec arrêt', s => s.n ? s.arret / s.n : 0, 'p', 1],
+  ['Femmes', s => s.n ? s.sexe['Femme'][0] / s.n : 0, 'p', 0], ['50 ans et plus', s => s.n ? (s.ages['50-59 ans'][0] + s.ages['60 ans et +'][0]) / s.n : 0, 'p', 0],
+  ['Contractuels / RG', s => s.n ? s.statut[STATUTS[1]][0] / s.n : 0, 'p', 0], ['Âge moyen', s => s.age, 'a', 0],
+  ['Verglas / neige', s => s.circ['Verglas / neige'], 'n', 1], ['Défauts de voirie', s => s.circ['Défaut ou obstacle de voirie'], 'n', 1],
+  ['En voiture', s => s.mode['Voiture'][0], 'n', 1], ['En transport en commun', s => s.mode['Transport en commun'][0], 'n', 1],
+  ['À deux-roues', s => s.twoArret[0], 'n', 1], ['Agressions', s => s.circ['Agression'], 'n', 1],
+  ['Fractures, entorses', s => s.lesion['Fracture'] + s.lesion['Entorse'] + s.lesion['Polytraumatisme'], 'n', 1],
+];
+function delta(a, b, kind, bad, short) {
+  const d = b - a; if (Math.abs(d) < (kind === 'p' ? .005 : kind === 'a' ? .05 : .5)) return '<span class="dl eq">=</span>';
+  const cls = bad ? (d > 0 ? 'up' : 'down') : 'eq', arrow = d > 0 ? '▲' : '▼';
+  if (kind === 'p') { const pt = Math.abs(Math.round(d * 100)); return `<span class="dl ${cls}">${arrow} ${pt} pt${pt > 1 ? 's' : ''}</span>`; }
+  if (kind === 'a') return `<span class="dl ${cls}">${arrow} ${Math.abs(d).toFixed(1).replace('.', ',')}</span>`;
+  return `<span class="dl ${cls}">${arrow} ${Math.abs(d)}${a && !short ? ` (${d > 0 ? '+' : '−'}${Math.round(Math.abs(d) / a * 100)} %)` : ''}</span>`;
+}
+const fmtv = (v, k) => k === 'p' ? Math.round(v * 100) + ' %' : k === 'a' ? String(v).replace('.', ',') : v;
+function dual(title, A, B, keys, getter) {
+  const max = Math.max(1, ...keys.map(k => Math.max(getter(A, k), getter(B, k))));
+  return `<div class="sec"><h3>${title}</h3>${keys.map(k => { const a = getter(A, k), b = getter(B, k); if (!a && !b) return '';
+    return `<div class="dual"><span class="bl" title="${k}">${k}</span><span class="bt"><i class="a" style="width:${100 * a / max}%"></i></span><span class="vals">${a} → <b>${b}</b> ${delta(a, b, 'n', 1, true)}</span><span class="bt"><i style="width:${100 * b / max}%"></i></span></div>`; }).join('')}</div>`;
+}
+function renderCompareYears() {
+  const ys = Object.keys(DATA.scopes).filter(k => k !== 'all');
+  if (!CMP.b || !ys.includes(String(CMP.b))) CMP.b = ys.at(-1);
+  if (!CMP.a || !ys.includes(String(CMP.a))) CMP.a = ys.at(-2) || ys[0];
+  const A = cmpScope(CMP.a), B = cmpScope(CMP.b), lim = new Date(+CMP.b, 0, DATA.meta.lim);
+  const opt = sel => ys.map(y => `<option ${String(y) === String(sel) ? 'selected' : ''}>${y}</option>`).join('');
+  $('#pEy').textContent = 'Comparaison dynamique'; $('#pTi').textContent = `${CMP.a} face à ${CMP.b}`;
+  const get = f => (s, k) => { const v = s[f][k]; return v ? (Array.isArray(v) ? v[0] : v) : 0; };
+  const full = ys.map(y => DATA.scopes[y]);
+  const mtx = `<div style="overflow-x:auto"><table class="ctab mtx"><tr><th>Point</th>${ys.map(y => `<th style="text-align:center">${y}</th>`).join('')}</tr>${IND.filter(i => i[2] === 'n').map(([l, f]) => {
+    const v = full.map(f), mx = Math.max(1, ...v); return `<tr><td>${l}</td>${v.map(x => `<td style="background:hsl(355 75% ${97 - 32 * x / mx}%)">${x}</td>`).join('')}</tr>`; }).join('')}</table></div>`;
+  $('#pBody').innerHTML = `<div class="cmpctl"><select id="cA" aria-label="Première année">${opt(CMP.a)}</select><span>face à</span><select id="cB" aria-label="Seconde année">${opt(CMP.b)}</select>
+      <label><input type="checkbox" id="cS" ${CMP.same ? 'checked' : ''}> à date égale (1er janv. → ${lim.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })})</label></div>
+    <p class="note">${CMP.same ? "Les deux années sont comparées sur la même période, pour tenir compte de l'année en cours incomplète." : "Années entières : attention, la dernière année n'est pas terminée."} Sur la maquette, les pastilles affichent l'écart entre les deux années.</p>
+    <table class="ctab"><tr><th>Indicateur</th><th>${CMP.a}</th><th>${CMP.b}</th><th>Écart</th></tr>${IND.map(([l, f, k, bad]) => `<tr><td>${l}</td><td>${fmtv(f(A), k)}</td><td><b>${fmtv(f(B), k)}</b></td><td>${delta(f(A), f(B), k, bad)}</td></tr>`).join('')}</table>
+    ${E().CMPDIMS.map(([t, f, keys]) => dual(t, A, B, keys(), get(f))).join('')}
+    <div class="sec"><h3>Tous les points, toutes les années</h3>${mtx}<p class="note">Années entières (la dernière est en cours). Plus la case est foncée, plus la valeur est élevée dans sa ligne.</p></div>`;
+  $('#cA').onchange = e => { CMP.a = e.target.value; refresh(); };
+  $('#cB').onchange = e => { CMP.b = e.target.value; refresh(); };
+  $('#cS').onchange = e => { CMP.same = e.target.checked; refresh(); };
+  Object.entries(HS).forEach(([id, h]) => { if (id === 'archives') return; const ct = h.el.querySelector('.ct');
+    const d = (badge[id](B) || 0) - (badge[id](A) || 0); ct.textContent = (d > 0 ? '+' : d < 0 ? '−' : '±') + Math.abs(d); ct.className = 'ct ' + (d > 0 ? 'up' : d < 0 ? 'down' : 'eq'); });
+}
+function openCompare() {
+  current = 'compare'; renderCompare(); panel.classList.remove('closed'); document.body.classList.add('pan'); $('#pBody').scrollTop = 0;
+  $('#cmpBtn').setAttribute('aria-pressed', 'true');
+  Object.values(HS).forEach(h => h.el.classList.remove('on', 'dim')); flyTo(HOME.target.clone(), 1);
+}
+const panel = $('#panel');
+const tween = { t: 1, from: null, to: null };
+function flyTo(target, zoom) {
+  tween.from = { target: controls.target.clone(), zoom: camera.zoom };
+  tween.to = { target, zoom }; tween.t = 0;
+}
+function open(id) {
+  if (current === 'compare') { current = null; $('#cmpBtn').setAttribute('aria-pressed', 'false'); refresh(); } current = id; render(id); panel.classList.remove('closed'); document.body.classList.add('pan'); $('#pBody').scrollTop = 0;
+  Object.entries(HS).forEach(([k, h]) => { h.el.classList.toggle('on', k === id); h.el.classList.toggle('dim', k !== id); });
+  const p = HS[id].v.clone(); p.y = 0;
+  const wide = innerWidth > 760;
+  // décale la cible pour laisser la place à la fiche
+  const right = new THREE.Vector3().subVectors(camera.position, controls.target).cross(new THREE.Vector3(0, 1, 0)).normalize();
+  const down = new THREE.Vector3().subVectors(camera.position, controls.target).normalize();
+  if (wide) p.add(right.multiplyScalar(5.5)); else p.add(down.multiplyScalar(-4));
+  flyTo(p, wide ? 1.75 : 1.5);
+}
+function closePanel() {
+  if (current === 'compare') { current = null; $('#cmpBtn').setAttribute('aria-pressed', 'false'); refresh(); } current = null; panel.classList.add('closed'); document.body.classList.remove('pan');
+  Object.values(HS).forEach(h => h.el.classList.remove('on', 'dim'));
+  flyTo(HOME.target.clone(), 1);
+}
+$('#close').onclick = closePanel;
+$('#reset').onclick = () => { closePanel(); camera.position.copy(HOME.pos); };
+addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
+$('#winter').onclick = e => {
+  winterOn = !winterOn; e.currentTarget.setAttribute('aria-pressed', winterOn);
+  snow.visible = winterOn; snowCaps.forEach(m => m.visible = winterOn); applyTheme();
+};
+$('#spin').onclick = e => { controls.autoRotate = !controls.autoRotate; e.currentTarget.setAttribute('aria-pressed', controls.autoRotate); };
+
+/* clic direct sur la maquette */
+const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
+let down = null;
+renderer.domElement.addEventListener('pointerdown', e => down = [e.clientX, e.clientY]);
+function pick(e) {
+  const r = renderer.domElement.getBoundingClientRect();
+  ptr.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1);
+  ray.setFromCamera(ptr, camera);
+  for (const hit of ray.intersectObjects([E().root], true)) {
+    let o = hit.object; while (o && !o.userData.hotspot) o = o.parent;
+    if (o) return o.userData.hotspot;
+  }
+  return null;
+}
+renderer.domElement.addEventListener('pointerup', e => {
+  if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 5) return;
+  const id = pick(e); if (id) open(id); else if (current) closePanel();
+});
+renderer.domElement.addEventListener('pointermove', e => { if (e.buttons) return; renderer.domElement.style.cursor = pick(e) ? 'pointer' : 'grab'; });
+
+/* ---------------------------------------------------------------- animation */
+const clock = new THREE.Clock();
+const easeBack = t => { const c = 1.6; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
+const tmp = new THREE.Vector3();
+let T = 0;
+function lightState(t) { const p = t % 14; return p < 6 ? ['G', 'R'] : p < 7 ? ['Y', 'R'] : p < 7.5 ? ['R', 'R'] : p < 12.5 ? ['R', 'G'] : p < 13.5 ? ['R', 'Y'] : ['R', 'R']; }
+function setLamps(arr, st) { arr[0].material.emissiveIntensity = st === 'R' ? 2.2 : .05; arr[1].material.emissiveIntensity = st === 'Y' ? 2.2 : .05; arr[2].material.emissiveIntensity = st === 'G' ? 2.2 : .05; }
+
+function tick() {
+  const dt = Math.min(clock.getDelta(), .05); T += RM ? 0 : dt;
+  const it = RM ? 99 : clock.elapsedTime;
+  intro.forEach(({ g, delay, root }) => { if (root && root !== E().root) return; const k = Math.min(1, Math.max(0, (it - introT0 - delay) / .55)); const s = k <= 0 ? .001 : easeBack(k); g.scale.set(1, Math.max(.001, s), 1); });
+  if (it - introT0 > 1.3) Object.values(HS).forEach(h => { if (h.el.style.opacity === '0') h.el.style.opacity = ''; });
+
+  // feux
+  const [mainS, crossS] = lightState(T); setLamps(lampsTL, mainS); setLamps(lampsTL2, crossS);
+  // véhicules
+  veh.forEach(v => {
+    const L = LANES[v.lane];
+    const green = (L.axis === 'x' ? mainS : crossS) === 'G';
+    let target = v.isBus ? 3.2 : 4.2;
+    const toStop = (L.stop - v.s) * L.dir;
+    if (!green && toStop > 0 && toStop < 2.6 + v.len / 2) target = 0;
+    veh.forEach(o => { if (o !== v && o.lane === v.lane) { const d = (o.s - v.s) * L.dir; if (d > 0 && d < (o.len + v.len) / 2 + 1.2) target = 0; } });
+    if (v.isBus) { const d = 10.5 - v.s; if (d > 0 && d < 3.5 && v.wait < 2.5) target = d < .25 ? 0 : Math.min(target, d * 1.2); if (Math.abs(d) < .3) v.wait += dt; if (v.s > 14) v.wait = 0; }
+    v.v += (target - v.v) * Math.min(1, dt * 3);
+    v.s += v.v * L.dir * (RM ? 0 : dt);
+    if (v.s * L.dir > L.lim) v.s = -L.lim * L.dir;
+    const fade = Math.min(1, Math.max(0, (L.lim - Math.abs(v.s)) / 1.4));
+    if (L.axis === 'x') { v.g.position.set(v.s, 0, L.c); v.g.rotation.y = L.dir > 0 ? 0 : Math.PI; }
+    else { v.g.position.set(L.c, 0, v.s); v.g.rotation.y = L.dir > 0 ? -Math.PI / 2 : Math.PI / 2; }
+    v.g.scale.setScalar(Math.max(.001, fade));
+  });
+  // piétons (glissade sur le verglas, trébuchement au trou)
+  peds.forEach(p => {
+    let sp = p.sp;
+    const zone = p.north ? -4.5 : -10;
+    if (Math.abs(p.x - zone) < 1.3 && p.ev <= 0) p.ev = 1;
+    if (p.ev > 0) { p.ev -= dt * 1.1; sp *= .35; }
+    p.x += sp * p.dir * (RM ? 0 : dt);
+    if (p.x > 18.5) p.x = -18.5; if (p.x < -18.5) p.x = 18.5;
+    if (Math.abs(p.x - zone) > 2.5 && p.ev < 0) p.ev = 0;
+    const e = Math.max(0, p.ev);
+    p.g.position.set(p.x, .18 + Math.abs(Math.sin(T * 7 + p.ph)) * .06, p.z);
+    p.g.rotation.y = p.dir > 0 ? 0 : Math.PI;
+    p.g.rotation.z = p.north ? Math.sin(e * Math.PI * 3) * .45 * e : 0;
+    p.g.rotation.x = p.north ? 0 : Math.sin(e * Math.PI) * .5;
+    p.g.scale.setScalar(Math.max(.001, Math.min(1, (18.5 - Math.abs(p.x)) / 1.2)));
+  });
+  riders.forEach(r => {
+    r.x -= r.sp * (RM ? 0 : dt); if (r.x < -18.5) r.x = 18.5;
+    r.g.position.set(r.x, .12, 3); r.g.rotation.y = Math.PI;
+    r.wheels.forEach(w => w.rotation.z += r.sp * dt * 3);
+    r.g.scale.setScalar(Math.max(.001, Math.min(1, (18.5 - Math.abs(r.x)) / 1.2)));
+  });
+  // décor
+  sway.forEach(s => s.g.rotation.z = Math.sin(T * 1.2 + s.p) * .03);
+  flag.rotation.y = Math.sin(T * 2.4) * .25;
+  hands.forEach(([a, b]) => { a.rotation.z = -T * .05; b.rotation.z = -T * .6; });
+  ice.material.opacity = .65 + Math.sin(T * 2) * .15;
+  if (snow.visible) { const a = snow.geometry.attributes.position; for (let i = 0; i < SN; i++) { let y = a.array[i * 3 + 1] - dt * (1.4 + (i % 5) * .2); if (y < 0) y = 20; a.array[i * 3 + 1] = y; a.array[i * 3] += Math.sin(T + i) * dt * .2; } a.needsUpdate = true; }
+  animS(dt); animM(dt);
+  // anneaux proportionnels au nombre d'accidents
+  Object.entries(HS).forEach(([id, h]) => {
+    const k = ((T * .5 + h.ph) % 1), amp = h.amp || 1;
+    h.ring.scale.setScalar(.6 + k * amp * 1.6); h.ring.material.opacity = (current && current !== id ? .12 : .55) * (1 - k);
+  });
+  // caméra
+  if (tween.t < 1) {
+    tween.t = Math.min(1, tween.t + dt / .9); const e = 1 - Math.pow(1 - tween.t, 3);
+    controls.target.lerpVectors(tween.from.target, tween.to.target, e);
+    camera.zoom = tween.from.zoom + (tween.to.zoom - tween.from.zoom) * e; camera.updateProjectionMatrix();
+  }
+  controls.update();
+  renderer.render(scene, camera);
+  // marqueurs HTML
+  const w = innerWidth, h = innerHeight;
+  Object.values(HS).forEach(hs => {
+    tmp.copy(hs.v); tmp.y += Math.sin(T * 2 + hs.ph * 6) * .15; tmp.project(camera);
+    const x = (tmp.x * .5 + .5) * stage.clientWidth, y = (-tmp.y * .5 + .5) * stage.clientHeight;
+    hs.el.style.transform = `translate(${x}px,${y}px) translate(-50%,-50%)`;
+  });
+  requestAnimationFrame(tick);
+}
+
+/* ================================================================ MODULE ACCIDENTS DE SERVICE ET DU TRAVAIL
+   Même maquette, autre scène : un lieu de travail où chaque point est une famille de risque. */
+const EMB_S = {"rows": [], "dirs": {"DEPE": ["Direction de l'éducation et de la petite enfance", "Éducation & petite enfance", 311], "DER": ["Direction de l'entretien et de la restauration", "Entretien & restauration", 210.92], "DEPTE": ["Direction de l'espace public et de la transition écologique", "Espace public", 181], "SPORTS": ["Direction des sports", "Sports", 90], "DBE": ["Direction des bâtiments et de l'énergie", "Bâtiments & énergie", 74], "DAC": ["Direction des affaires culturelles", "Culture", 155], "DVCJ": ["Direction de la vie citoyenne et de la jeunesse", "Vie citoyenne & jeunesse", 55], "SOLID": ["Direction de la solidarité / CCAS", "Solidarité / CCAS", 102.1], "SANTE": ["Direction de la santé", "Santé", 96.2], "POP": ["Direction population", "Population", 65], "CDM": ["Cabinet du Maire", "Cabinet du Maire", 38], "PM": ["Direction de la sécurité et de la prévention (police municipale)", "Police municipale", 46], "COM": ["Direction de la communication", "Communication", 24], "DRH": ["Direction des ressources humaines", "Ressources humaines", 50.5], "FIN": ["Direction de la programmation, du pilotage et du contrôle interne financier", "Finances", 25], "DUHE": ["Direction de l'urbanisme, de l'habitat et de l'économie", "Urbanisme & habitat", 25], "DSI": ["Direction des systèmes d'information", "Systèmes d'information", 18], "DAAAJD": ["Direction des assemblées, assurances, affaires juridiques et domaniales", "Affaires juridiques", 8], "DGST": ["Direction générale des services techniques (services centraux)", "DGST", null], "DGS": ["Direction générale des services", "DGS", null], "NR": ["Non rattaché / à confirmer", "Non rattaché", null]}};
+const DIRS = EMB_S.dirs; // code -> [libellé, nom court, postes 2026]
+const DIRCODES = Object.keys(DIRS);
+const KEYS_S = ['d', 'type', 'sexe', 'age', 'statut', 'cat', 'filiere', 'dir', 'struct', 'circ', 'act', 'lesion', 'zone', 'heure', 'arret', 'ag', 'delai', 'eRecit', 'eCause', 'conf'];
+const S_CIRCS = ['Chute de plain-pied, glissade', 'Manutention, effort', 'Geste, posture, faux mouvement', 'Heurt, choc, coincement', 'Escaliers, marches, hauteur', 'Interaction avec un enfant', 'Agression (usager, animal)', 'Coupure, piqûre, exposition au sang', 'Brûlure, produit, projection', 'Véhicule, engin', 'Malaise', 'Non précisé'];
+const S_ACTS = ['Entretien, nettoyage', 'Restauration, service des repas', "Encadrement d'enfants", 'Voirie, propreté, espaces verts', 'Bâtiment, maintenance', 'Manutention, logistique', 'Soins, santé', 'Accueil, bureau', 'Sport, nautique', 'Déplacement à pied', 'Non précisée'];
+const S_LES = ['Douleurs', 'Contusions', 'Entorse', 'Lumbago, sciatique', 'Fracture', 'Plaie, piqûre', 'Brûlure', 'Malaise', 'Troubles psychologiques', 'Autres', 'Non renseignée'];
+const S_ZONES = ['Membres inférieurs', 'Membres supérieurs', 'Mains, doigts', 'Dos, tronc, bassin', 'Tête, cou, yeux', 'Autre / multiple', 'Non renseigné'];
+const S_TH = ['Avant 8h', '8h-10h', '10h-12h', '12h-14h', '14h-16h', '16h-18h', 'Après 18h', 'Non renseignée'];
+const S_FIL = ['Technique', 'Animation', 'Médico-sociale', 'Administrative', 'Culturelle', 'Sportive', 'Police municipale', 'Non classés (vacataires, apprentis)'];
+const f1 = v => v == null || isNaN(v) ? '–' : (Math.round(v * 10) / 10).toLocaleString('fr-FR');
+const title = s => String(s).toLowerCase().replace(/(^|[\s(/'-])\S/g, c => c.toUpperCase());
+const NORMU = s => norm(s).toUpperCase().replace(/\s+/g, ' ').trim();
+
+/* --- rattachement structure -> direction (portage de directions.py, organigramme 2026) --- */
+const DRULES = [
+  [/DUHE|DROIT DES SOLS|PROJETS URBAINS|URBANISME|HABITAT|HYGIENE/, 'DUHE'], [/COMPTABILITE|BUDGET|ACHATS PUBLICS|COMMANDE PUBLIQUE|PRESTATIONS FAMILLES|DIR FINANCES/, 'FIN'],
+  [/ANIM TPS MERIDIEN|ANIMATION TEMPS MERIDIEN/, 'DEPE'],
+  [/POOL TOURNANT|\(ENTRETIEN\)|\(RESTAURATION\)|ENTRETIEN TNC|ENTRETIEN TC|REST TECH|RESTAURATION TECHNIQUE|SCE DE L.ENTRETIEN|POLE SECTEUR (ENTRETIEN|RESTAURATION)|CHEF\.?FES DU SECTEUR|DIR ENTRETIEN/, 'DER'],
+  [/\(ATSEM\)|\(CENTRES? LOISIRS\)|CENTRE DE LOISIRS|CENTRES LOISIRS|CLME|CRECHE|PETITE ENFANCE|MULTI ACCUEIL|ACCUEIL ENFANCE|ENSEIGN|SCOLARISATION|VACANCES|TEMPS DE L.ENFANT|POLE OSV|DIR DE L.EDUCATION/, 'DEPE'],
+  [/NAUTIQUE|INSTAL COUV|INSTA COUVERTES|PLEIN NA|PLEIN AIR|ATELIER DES SPORTS|\bSPORT/, 'SPORTS'],
+  [/SMSB|MAITRISE OUVRAGE PUBLIC|BATIMENTS|ENERGIE|ECONOMAT|MAINTENANCE & SECU BAT/, 'DBE'],
+  [/DECV|DEPTE|VOIRIE|PROPRETE|ESP VERT|EXPLOI|EQ LOGISTIQUES|TRAVAUX NEUFS|INNOVATION ET PILOT|TRANS ECOLO|PARC AUTO|^SECTEUR (4 CITES|CENTRE|MAROC|MORDACS|LE BOIS|PLATEAU|ZONE)|SECTEUR ZONE|ESPACE PUBLIC|ENV CADRE DE VIE|INFRA TRANSP|A DEFINIR NX AGENTS/, 'DEPTE'],
+  [/MEDIATHEQUE|LECTURE PUB|MUSIQ|ECOLE DE MUSIQUE|ECOLE DE THEATRE|SPECTACLE|SPECT VIVANTS|ARTS VISUELS|\bDAC\b|AFFAIRES CULTURELLES/, 'DAC'],
+  [/\bMPT\b|DECOUVRIR|REUSSIR|VIE ASSOCIATIVE|VIE DES QUARTIERS|DVCDJ|DVCJ|VIE CITOYENNE/, 'DVCJ'],
+  [/EHPAD|SENIOR|AIDE FACULTATIVE|AIDE LEGALE|POLE SOIN|SOLIDARITE|CCAS/, 'SOLID'], [/DENTAIRE|MEDECINE MEDICAL|INFIRMERIE|PARAMEDICAL|FACTURATION|SANTE|CMS/, 'SANTE'],
+  [/ETAT CIVIL|ELECTIONS|RELATION AUX USAGERS|COURRIER|CIMETIERE|DIR POPULATION|ARCHIVES/, 'POP'], [/POLICE|SURVEILLANT|VOIE PUBLIQUE|TRAVERSEE|CSU/, 'PM'],
+  [/INITIATIVES? PUB|MOYENS LOGISTIQUES|MISSION PRE|CABINET|GESTION ET COORDINATION/, 'CDM'], [/DIR DE LA COM|COMMUNICATION|POLE IMAGE|IMPRESSION/, 'COM'],
+  [/ADMINISTRATIF RH|FORMATION|PARCOURS PROF|RECRUTEMENT|MEDECINE PREV|RESSOURCES HUMAINES|APPUI AU PILOTAGE|ADMIN DU PERSONNEL/, 'DRH'],
+  [/DSI|SYSTEMES INFORMATIQUES/, 'DSI'], [/AFF JURI|ASSEMB|DOMANIALES|DAAAJD/, 'DAAAJD'], [/HOTEL DE VILLE/, 'DER'],
+  [/SCE TECHNIQUES|DIR GEN\. DES SCE TECHNIQUES|ADMINISTRATIVE ET FINANCIERE/, 'DGST'], [/DIR GENERALE DES SERVICES/, 'DGS']];
+const A_CONF = ['A DEFINIR NX AGENTS', 'POLE ACCUEIL ET FACTURATION', 'POLE SOIN', 'EQ GESTION ET COORDINATION', 'SECTEUR ECONOMAT', 'EQ PROJET/TRAVAUX NEUFS'];
+function dirOf(st) { const n = NORMU(st); if (!n || n.startsWith("AIDE AU RETOUR A L'EMPLOI")) return ['NR', 1]; for (const [re, c] of DRULES) if (re.test(n)) return [c, +A_CONF.includes(n)]; return ['NR', 1]; }
+
+/* --- circonstance, activité, lésion : portage de prep_at.py --- */
+const CRULES = [[/malaise|perdu connaissance|connaissance|etourdi|avc\b|vertige/, 10], [/agress|insult|menac|coup de poing|frapp|morsure|mordu|chien|griff/, 6],
+  [/piq|aiguille|seringue|coupe|coupure|entaill|tranch|couteau|cutter|lame|liquide biolog|\baes\b/, 7], [/brul|huile|chaud|produit|chimique|projection|vapeur|irrit|emulsion|eau de javel|javel/, 8],
+  [/vehicule|voiture|camion|benne|balayeuse|engin|collision|tracteur|portiere|chariot elevateur|marche-pied du vehicule/, 9],
+  [/enfant.{0,60}(pouss|percut|coup|bouscul|tete|tomb|tire|mord|griff|lance|ballon|cogn|bras|port|porter|souleve|courant)|(pouss|percut|coup|bouscul|port|souleve).{0,40}enfant|bebe|nourrisson/, 5],
+  [/escalier|marche\b|marches|echelle|escabeau|sur une chaise|monte sur|marchepied|talus|hauteur|perron|estrade|quai/, 4],
+  [/soulev|porta|port(e|ant) |charge|carton|sac |sacs|poubelle|container|conteneur|chariot|pouss|tir(e|ant|er)|manutention|caisse|pack|matelas|deplac|table|banc|barriere|fut|bidon|seau/, 1],
+  [/gliss|trebuch|chut|tomb|tordu|tord|equilibre|sol mouill|pris les pieds|rate/, 0], [/cogn|heurt|coinc|percut|porte|choc|recu|objet|tombe sur|ecras|pince/, 3],
+  [/faux mouvement|douleur|baiss|relev|accroupi|pench|bloque|torsion|craqu|tendu/, 2]];
+const CAUSE_MAP = [['chute', 0], ['glissade', 0], ['effort', 1], ['manutention', 1], ['objet ou masse', 3], ['machine', 3], ['instruments', 7], ['sang', 7], ['aggression', 6], ['produit', 8], ['brulure', 8], ['projection', 8], ['vehicule', 9]];
+function circOf(t, cause) { if (t) for (const [re, i] of CRULES) if (re.test(t)) return S_CIRCS[i]; const c = norm(cause); for (const [k, i] of CAUSE_MAP) if (c.includes(k)) return S_CIRCS[i]; return S_CIRCS[11]; }
+const ARULES = [[/soin|patient|vaccin|dentaire|infirm|consultation|ehpad|resident/, 6], [/piscine|bassin|nautique|gymnase|stade|terrain de sport|maitre.nageur|tennis/, 8],
+  [/trottoir|voirie|dechet|detritus|benne|souffl|plantation|talus|espace vert|nid.? de poule|tondeu|balayeuse|caniveau|propret|square|rue /, 3],
+  [/repas|cuisin|office|plonge|vaisselle|four|cantine|restauration|plateau|self|linear|lineaire|refectoire/, 1], [/enfant|cour |cour de|classe|creche|bebe|nourrisson|centre de loisirs|activite|jeu |jeux|sortie|animation/, 2],
+  [/nettoy|balay|menage|lav|aspir|serpill|entretien|poubelle|sanitaire|toilette|lessive|chariot de menage|mop/, 0], [/atelier|travaux|perceuse|plomb|electri|serrur|marteau|meuleuse|peinture|chantier|maintenance|reparation|outil/, 4],
+  [/livraison|stock|charge|carton|installation|barriere|materiel|demenag|manutention|salle/, 5], [/bureau|accueil|ordinateur|usager|guichet|courrier|chaise|reunion|dossier|archive/, 7],
+  [/marchant|se rendait|se dirigeait|en allant|en se rendant|en sortant|en rentrant|couloir/, 9]];
+const actOf = t => { if (!t) return S_ACTS[10]; for (const [re, i] of ARULES) if (re.test(t)) return S_ACTS[i]; return S_ACTS[10]; };
+function lesOf(s) { s = norm(s); if (!s.trim()) return 'Non renseignée'; for (const [k, l] of [['douleur', 'Douleurs'], ['contusion', 'Contusions'], ['entorse', 'Entorse'], ['lumbago', 'Lumbago, sciatique'], ['sciatique', 'Lumbago, sciatique'], ['fracture', 'Fracture'], ['plaie', 'Plaie, piqûre'], ['piqure', 'Plaie, piqûre'], ['ecrasement', 'Plaie, piqûre'], ['brulure', 'Brûlure'], ['malaise', 'Malaise'], ['psycho', 'Troubles psychologiques']]) if (s.includes(k)) return l; return 'Autres'; }
+function zoneOf(s) { s = norm(s); if (!s.trim()) return 'Non renseigné'; if (/yeux|oeil|tete|cou\b|crane|visage|nez|joue|machoire|dent|bouche|oreille/.test(s)) return 'Tête, cou, yeux'; if (/main|doigt|pouce|index/.test(s)) return 'Mains, doigts'; if (/dos|lombaire|colonne|thorax|abdomen|hanche|bassin|cote|tronc|fesse|coccyx/.test(s)) return 'Dos, tronc, bassin'; if (/epaule|bras|coude|poignet|membres sup/.test(s)) return 'Membres supérieurs'; if (/genou|jambe|cheville|pied|orteil|cuisse|mollet|talon|membres inf/.test(s)) return 'Membres inférieurs'; return 'Autre / multiple'; }
+function trancheS(h) { const m = /^(\d{1,2}):(\d{2})/.exec(String(h || '').trim()); if (!m || m[0] === '00:00') return 'Non renseignée'; const x = +m[1] + m[2] / 60; return x < 8 ? S_TH[0] : x < 10 ? S_TH[1] : x < 12 ? S_TH[2] : x < 14 ? S_TH[3] : x < 16 ? S_TH[4] : x < 18 ? S_TH[5] : S_TH[6]; }
+const FAM_S = { 'adjoints techniques': 'Technique', 'agents de maitrise': 'Technique', 'techniciens territoriaux': 'Technique', 'ingenieurs': 'Technique', "adjoints d'animation": 'Animation', 'animateurs territoriaux': 'Animation', 'educateurs territoriaux a.p.s': 'Sportive', 'operateurs des a.p.s.': 'Sportive', 'a.t.s.e.m.': 'Médico-sociale', 'auxiliaires de puericulture': 'Médico-sociale', 'agents sociaux': 'Médico-sociale', 'auxiliaires de soins': 'Médico-sociale', 'infirmiers en soins generaux': 'Médico-sociale', 'puericultrices territoriales': 'Médico-sociale', 'medecins': 'Médico-sociale', 'conseillers socio-educatifs': 'Médico-sociale', 'educateurs de jeunes enfants': 'Médico-sociale', 'assistants socio-educatifs': 'Médico-sociale', 'psychologues': 'Médico-sociale', 'redacteurs territoriaux': 'Administrative', 'adjoints administratifs': 'Administrative', 'attaches': 'Administrative', 'professeurs enseignement art.': 'Culturelle', 'assistants enseignement art.': 'Culturelle', 'assistants de conservation': 'Culturelle', 'adjoints du patrimoine': 'Culturelle', 'bibliothecaires': 'Culturelle', 'conservateurs bibliotheques': 'Culturelle', 'attaches cons. du patrimoine': 'Culturelle', 'agents de police municipale': 'Police municipale', 'chefs de service de police municipale': 'Police municipale' };
+function deriveS(raw) {
+  const cols = Object.keys(raw[0] || {}), K = n => cols.find(c => norm(c).trim() === norm(n));
+  const miss = ['Date accident', "Type d'évènement", 'Structure', 'Statut de paie'].filter(n => !K(n));
+  if (miss.length) throw new Error('Colonnes introuvables : ' + miss.join(', ') + ". Utilisez l'export « Synthèse des données » de grdInfos.");
+  const types = {}, ids = {}, seen = new Set(); let nid = 0; const rows = [];
+  raw.forEach(r => {
+    const ty = String(r[K("Type d'évènement")] || 'Non précisé').trim(); types[ty] = (types[ty] || 0) + 1;
+    if (!/service|travail/i.test(ty)) return;
+    const dos = String(r[K('N° dossier')] || ''); if (dos && seen.has(dos)) return; seen.add(dos);
+    const d = toDate(r[K('Date accident')]); if (!d) return;
+    const t = norm(r[K('Nature accident')]).replace(/\n/g, ' ').trim();
+    const mat = String(K('Matricule') && r[K('Matricule')] ? r[K('Matricule')] : (/^A\d{11}$/.test(dos) ? dos.slice(1, 6) : dos || Math.random()));
+    if (!(mat in ids)) ids[mat] = nid++;
+    const st = String(r[K('Structure')] || '').trim(), [dir, conf] = dirOf(st), sd = toDate(r[K('Date de saisie')]);
+    const mc = /Catégorie ([ABC])/i.exec(String(r[K('Catégorie statutaire')] || ''));
+    rows.push([iso(d), /service/i.test(ty) ? 'S' : 'T', String(r[K('Sexe')] || '').trim(), parseInt(r[K('Age')]) || 0, String(r[K('Statut de paie')] || '').trim() === 'CNR' ? 'F' : 'C',
+      mc ? mc[1].toUpperCase() : 'Hors cat.', FAM_S[norm(r[K("Cadre d'emploi")]).trim()] || S_FIL[7], dir, st, circOf(t, r[K('Cause 1')]), actOf(t),
+      lesOf(r[K('Nature 1')]), zoneOf(r[K('Siège 1')]), trancheS(r[K('Heure accident')]), /avec/i.test(r[K('Conséquence')] || '') ? 1 : 0, ids[mat],
+      sd ? Math.round((sd - d) / 864e5) : 0, +empty(r[K('Nature accident')]), +empty(r[K('Cause 1')]), conf]);
+  });
+  return { rows, types };
+}
+function scopeS(x) {
+  const agents = {}; x.forEach(r => agents[r.ag] = (agents[r.ag] || 0) + 1);
+  const mult = Object.values(agents).filter(v => v > 1);
+  return { n: x.length, arret: x.filter(r => r.arret).length, age: x.length ? Math.round(10 * x.reduce((s, r) => s + r.age, 0) / x.length) / 10 : 0,
+    known: x.filter(r => r.circ !== 'Non précisé').length,
+    sexe: rate(x, 'sexe', ['Femme', 'Homme']), ages: rate(x, 'tage', AGES), statut: rate(x, 'statut', STATUTS), cat: rate(x, 'cat', ['A', 'B', 'C', 'Hors cat.']),
+    filiere: rate(x, 'filiere', S_FIL), dir: rate(x, 'dir', DIRCODES), circ: cnt(x, 'circ', S_CIRCS), act: cnt(x, 'act', S_ACTS), lesion: cnt(x, 'lesion', S_LES),
+    zone: cnt(x, 'zone', S_ZONES), heure: cnt(x, 'heure', S_TH), jour: cnt(x, 'jour', JOURS), mois: [...Array(12)].map((_, m) => x.filter(r => r.m === m).length),
+    saison: cnt(x, 'saison', SAISONS), multiAgents: mult.length, multiRows: mult.reduce((a, b) => a + b, 0), multiMax: Math.max(0, ...mult), rows: x };
+}
+/* taux pour 100 postes : moyenne des années complètes (ou année choisie, annualisée si en cours) */
+function rateS(D, key, code) {
+  const posts = code === 'all' ? DIRCODES.reduce((s, c) => s + (DIRS[c][2] || 0), 0) : (DIRS[code] || [])[2];
+  if (!posts || !D.years.length) return null;
+  const full = D.years.length > 2 ? D.years.slice(1, -1) : D.years;
+  const nOf = y => (code === 'all' || dirFilter === code) ? y.n : y.dirs?.[code] ?? 0;
+  if (key === 'all') return full.reduce((s, y) => s + nOf(y), 0) / full.length / posts * 100;
+  const y = D.years.find(v => String(v.y) === String(key)); if (!y) return null;
+  return (y.y === D.meta.lastY ? nOf(y) / (D.meta.lim / 365) : nOf(y)) / posts * 100;
+}
+function dirRate(D, key, code) { // taux d'une direction quel que soit le filtre courant
+  const posts = code === 'all' ? DIRCODES.reduce((t, c) => t + (DIRS[c][2] || 0), 0) : (DIRS[code] || [])[2]; if (!posts) return null;
+  const rows = ALL.service.filter(r => code === 'all' || r.dir === code), lastY = D.meta.lastY, ys = [...new Set(ALL.service.map(r => r.y))].sort();
+  const full = ys.length > 2 ? ys.slice(1, -1) : ys;
+  if (key === 'all') return full.reduce((s, y) => s + rows.filter(r => r.y === y).length, 0) / full.length / posts * 100;
+  const n = rows.filter(r => r.y === +key).length; return (+key === lastY ? n / (D.meta.lim / 365) : n) / posts * 100;
+}
+function detectS(D, key) {
+  const s = D.scopes[key], x = s.rows, A = []; if (!x.length) return A;
+  const add = (lvl, hs, t, txt) => A.push({ lvl, hs, title: t, text: txt });
+  const gr = s.arret / s.n, Y = D.years, iy = Y.findIndex(y => String(y.y) === String(key === 'all' ? D.meta.lastY : key));
+  if (iy > 0 && Y[iy - 1].same >= 6) { const c = Y[iy], p = Y[iy - 1], ev = c.same / p.same - 1;
+    if (ev >= .25) add(ev >= .5 ? 'crit' : 'warn', 'horloge', `Hausse de ${Math.round(ev * 100)} % sur un an`, `${c.y} : ${c.same} accidents au ${fr(new Date(c.y, 0, D.meta.lim))}, contre ${p.same} un an plus tôt.`);
+    if (ev <= -.25) add('info', 'horloge', `Baisse de ${Math.round(-ev * 100)} % sur un an`, `${c.y} : ${c.same} accidents contre ${p.same} sur la même période de ${p.y}.`); }
+  const mo = {}; D.scopes.all.rows.forEach(r => { const k = r.y * 12 + r.m; mo[k] = (mo[k] || 0) + 1; });
+  const ks = Object.keys(mo).map(Number), avg = D.scopes.all.n / Math.max(1, Math.max(...ks) - Math.min(...ks) + 1);
+  Object.entries(mo).forEach(([k, v]) => { const y = Math.floor(k / 12); if ((key === 'all' || String(y) === String(key)) && v >= Math.max(8, 2.2 * avg))
+    add('warn', 'horloge', `Pic en ${new Date(y, k % 12, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}`, `${v} accidents ce mois-ci, contre ${f1(avg)} par mois en moyenne.`); });
+  if (dirFilter === 'all') {
+    const ref = rateS(D, key, 'all');
+    DIRCODES.forEach(c => { const d = s.dir[c]; if (!d || d[0] < 5) return; const r = dirRate(D, key, c);
+      if (r && ref && r >= ref * 1.5) add(r >= ref * 2 ? 'crit' : 'warn', 'profil', `${c} : ${f1(r)} accidents pour 100 postes`, `${DIRS[c][0]} : ${f1(r / ref)} fois le taux de la collectivité (${f1(ref)}). Indicateur approché (postes de l'organigramme 2026).`);
+      if (d[0] >= 10 && d[1] / d[0] >= gr + .15) add('warn', 'profil', `${c} : ${pc(d[1], d[0])} d'accidents avec arrêt`, `Gravité supérieure à la moyenne (${pc(s.arret, s.n)}).`); });
+  }
+  const ch = s.circ[S_CIRCS[0]] + s.circ[S_CIRCS[4]];
+  if (s.n >= 10 && ch / s.n >= .35) add('warn', 'chute', `${pc(ch, s.n)} de chutes`, 'Chutes de plain-pied et dans les escaliers : diagnostic des sols, éclairage, rangement en hauteur, chaussures antidérapantes.');
+  const esc = x.filter(r => r.circ === S_CIRCS[4]); if (esc.length >= 5 && esc.filter(r => r.arret).length / esc.length >= gr + .1) add('warn', 'escalier', `Escaliers et hauteur : ${pc(esc.filter(r => r.arret).length, esc.length)} avec arrêt`, 'Les chutes de hauteur sont plus graves : marchepieds stables, interdiction des chaises, mains courantes.');
+  const ef = s.circ[S_CIRCS[1]] + s.circ[S_CIRCS[2]]; if (s.n >= 10 && ef / s.n >= .2) add('warn', 'manut', `${pc(ef, s.n)} liés à la manutention ou à la posture`, 'Formation PRAP et matériel d\'aide : chariots, conteneurs à roulettes, tables légères.');
+  if (s.circ[S_CIRCS[9]] >= 3) add('warn', 'vehicule', `${s.circ[S_CIRCS[9]]} accidents avec un véhicule ou un engin`, 'Montée et descente des camions, bennes, collisions : analyser chaque cas.');
+  if (s.circ[S_CIRCS[6]]) add('crit', 'agression', `${s.circ[S_CIRCS[6]]} agression${s.circ[S_CIRCS[6]] > 1 ? 's' : ''} (usager ou animal)`, "Contacter l'agent sous 48 h : soutien psychologique, protection fonctionnelle, dépôt de plainte.");
+  if (s.circ[S_CIRCS[7]] >= 2) add('warn', 'coupure', `${s.circ[S_CIRCS[7]]} coupures, piqûres ou expositions au sang`, 'Vérifier le protocole AES, les conteneurs à aiguilles et les gants adaptés.');
+  if (s.circ[S_CIRCS[8]] >= 3) add('warn', 'brulure', `${s.circ[S_CIRCS[8]]} brûlures ou projections`, 'Lunettes et gants, fiches de données de sécurité, organisation des offices.');
+  if (s.circ[S_CIRCS[5]] >= 5) add('info', 'enfant', `${s.circ[S_CIRCS[5]]} accidents en interaction avec des enfants`, 'Gestes et postures avec les jeunes enfants, mobilier adapté aux adultes, encadrement des jeux.');
+  if (s.lesion['Fracture'] >= 3) add('warn', 'lesions', `${s.lesion['Fracture']} fractures`, 'Accidents graves : enquête de causalité systématique et suivi de la reprise.');
+  if (s.multiAgents) add(s.multiMax >= 3 ? 'crit' : 'warn', 'profil', `${s.multiAgents} agents accidentés plusieurs fois`, `${s.multiRows} déclarations, jusqu'à ${s.multiMax} pour un même agent. Proposer un entretien de prévention avec la médecine préventive.`);
+  const st = {}; x.forEach(r => st[r.struct] = (st[r.struct] || 0) + 1);
+  Object.entries(st).filter(([, v]) => v >= (key === 'all' ? 12 : 5)).sort((a, b) => b[1] - a[1]).slice(0, 3).forEach(([k, v]) => add('warn', 'profil', `${v} accidents : ${title(k)}`, 'Structure au-dessus du seuil : faire le point avec l\'encadrant sur l\'organisation et les équipements.'));
+  const q = D.quality[key];
+  if (q['Récit'] >= .4) add('warn', 'archives', `Récit absent dans ${Math.round(q['Récit'] * 100)} % des déclarations`, 'Rendre le récit obligatoire : sans lui, la famille de risque reste « non précisée ».');
+  if (q.delai > 15) add('warn', 'archives', `Saisie tardive : ${Math.round(q.delai)} jours en médiane`, "Délai réglementaire de 15 jours pour les fonctionnaires CNRACL, 48 h pour la CPAM au régime général.");
+  const tt = x.filter(r => r.type === 'T').length; if (tt && x.some(r => r.type === 'S')) add('info', 'archives', 'Libellés « service » et « travail » mélangés', `${tt} déclarations en « accident du travail », quel que soit le statut. Utiliser un seul libellé.`);
+  const cf = x.filter(r => r.conf).length; if (cf) add('info', 'archives', `${cf} déclarations à rattacher`, 'Structure dont la direction est déduite ou inconnue : vérifier la table structures → directions.');
+  const o = { crit: 0, warn: 1, info: 2 }; return A.sort((a, b) => o[a.lvl] - o[b.lvl]);
+}
+
+/* --- familles de risque (un point par famille sur la maquette) --- */
+const RISKS = {
+  chute: { label: 'Chutes de plain-pied', pos: [-6, 3.2, -4.5], circs: [S_CIRCS[0]], ey: 'Famille de risque', ti: 'Chutes de plain-pied et glissades',
+    big: 'chutes de plain-pied', insight: 'Sols mouillés des offices, préaux et sanitaires, jouets et câbles au sol, trottoirs : la <strong>première cause</strong> d\'accident.',
+    reco: 'Diagnostic des sols, revêtements antidérapants, signalisation des sols mouillés, nettoyage hors présence des enfants, chaussures antidérapantes.' },
+  escalier: { label: 'Escaliers et hauteur', pos: [3.5, 6.4, -7.5], circs: [S_CIRCS[4]], ey: 'Famille de risque', ti: 'Escaliers, marches et travail en hauteur',
+    big: 'chutes dans les escaliers ou de hauteur', insight: 'Marches ratées, chaise ou marchepied pour atteindre une étagère, talus : moins nombreuses mais <strong>plus graves</strong>.',
+    reco: 'Marchepieds stables à 2 ou 3 marches, interdiction des chaises, mains courantes et nez de marche, éclairage des escaliers.' },
+  manut: { label: 'Manutention et posture', pos: [-4.5, 3, 9.5], circs: [S_CIRCS[1], S_CIRCS[2]], ey: 'Famille de risque', ti: 'Manutention, efforts et postures',
+    big: 'accidents de manutention, d\'effort ou de posture', insight: 'Poubelles et conteneurs, chariots de repas et de ménage, cartons, mobilier : à l\'origine de la plupart des <strong>douleurs de dos</strong>.',
+    reco: 'Formation PRAP, chariots adaptés et entretenus, conteneurs à roulettes, lève-conteneurs, tables légères pour les installations de salles.' },
+  heurt: { label: 'Heurts et coincements', pos: [3.5, 4.2, 9.5], circs: [S_CIRCS[3]], ey: 'Famille de risque', ti: 'Heurts, chocs et coincements',
+    big: 'heurts, chocs ou coincements', insight: 'Portes, chariots, objets en mouvement, outils : les <strong>mains et les doigts</strong> sont souvent touchés.',
+    reco: 'Ferme-portes et butées, rangement des ateliers, protections des machines, gants adaptés.' },
+  enfant: { label: 'Interaction avec les enfants', pos: [-14.5, 2.6, -1.8], circs: [S_CIRCS[5]], ey: 'Famille de risque', ti: 'Interaction avec les enfants',
+    big: 'accidents en interaction avec un enfant', insight: 'Bousculade, coup, ballon, porter un enfant : surtout <strong>animateurs, ATSEM et petite enfance</strong>, souvent bénins.',
+    reco: 'Gestes et postures avec les jeunes enfants, sièges adaptés aux adultes, consignes pour les jeux de ballon, livret d\'accueil des vacataires.' },
+  agression: { label: 'Agressions', pos: [7, 3.4, -2.2], circs: [S_CIRCS[6]], ey: 'Famille de risque', ti: 'Agressions par un usager ou un animal',
+    big: 'agressions (usager, animal)', insight: 'Agressions verbales ou physiques au guichet ou sur la voie publique, morsures de chien : <strong>un suivi individuel</strong> s\'impose à chaque fois.',
+    reco: "Contacter l'agent sous 48 h : soutien psychologique, protection fonctionnelle, dépôt de plainte. Former les agents d'accueil à la gestion des conflits." },
+  coupure: { label: 'Coupures, piqûres, AES', pos: [17.2, 2.6, 7.4], circs: [S_CIRCS[7]], ey: 'Famille de risque', ti: 'Coupures, piqûres et expositions au sang',
+    big: 'coupures, piqûres ou expositions au sang', insight: 'Couteaux en cuisine, outils, <strong>aiguilles en soins dentaires</strong>, objets souillés dans les poubelles.',
+    reco: 'Protocole accident d\'exposition au sang, conteneurs à aiguilles, interdiction de recapuchonner, gants anti-coupure en cuisine.' },
+  brulure: { label: 'Brûlures et produits', pos: [-12.5, 4.8, 9.2], circs: [S_CIRCS[8]], ey: 'Famille de risque', ti: 'Brûlures, produits et projections',
+    big: 'brûlures, produits ou projections', insight: 'Huile chaude, fours, émulsion de voirie, produits d\'entretien, projections dans les <strong>yeux</strong>.',
+    reco: 'Lunettes et gants, fiches de données de sécurité accessibles, organisation des offices et des fours.' },
+  vehicule: { label: 'Véhicules et engins', pos: [.5, 3.6, 4], circs: [S_CIRCS[9]], ey: 'Famille de risque', ti: 'Véhicules et engins',
+    big: 'accidents avec un véhicule ou un engin', insight: 'Montée et descente des camions, chargement de la benne, balayeuse, collisions : presque toujours à <strong>l\'espace public (DEPTE)</strong>, et souvent graves.',
+    reco: 'Marchepieds et poignées, règle des 3 points d\'appui, analyse de chaque collision, chargement des bennes sans lancer les sacs.' },
+};
+const ICONS_S = {
+  chute: '<path d="M12 3l9 17H3z"/><path d="M8 17c1.5-1 2.5-1 4 0s2.5 1 4 0"/>',
+  escalier: '<path d="M3 20h5v-5h5v-5h5V5h3"/>',
+  manut: '<rect x="5" y="9" width="14" height="10" rx="1"/><path d="M5 13h14M9 9V5h6v4"/>',
+  heurt: '<path d="M4 20V5h9v15M13 12h2"/><path d="M17 8l3-3M18 12h3M17 16l3 3"/>',
+  enfant: '<circle cx="12" cy="6" r="2.5"/><path d="M12 9v6M8 12h8M10 21l2-6 2 6"/>',
+  agression: '<path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/><path d="M12 8v4M12 15.5v.5"/>',
+  coupure: '<path d="M18 3l3 3M16 5l3 3-9 9H7v-3z"/><path d="M4 20l3-3"/>',
+  brulure: '<path d="M12 3c3 4 6 6 6 11a6 6 0 0 1-12 0c0-3 2-5 3-7 1 2 2 3 3 3 0-2-1-4 0-7z"/>',
+  vehicule: '<rect x="2" y="7" width="13" height="9" rx="1"/><path d="M15 10h4l3 3v3h-7"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/>',
+  profil: '<path d="M3 21h18M5 21V9l7-5 7 5v12"/><path d="M9 21v-5h6v5M9 11h.01M15 11h.01"/>',
+  horloge: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  lesions: '<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/>',
+  archives: '<path d="M4 4h6l2 2h8v13H4z"/><path d="M8 12h8M8 15h5"/>',
+};
+const HS_S = Object.fromEntries([...Object.entries(RISKS).map(([k, r]) => [k, { label: r.label, pos: r.pos }]),
+  ['profil', { label: 'Qui est concerné ?', pos: [12.5, 7.8, -8.5] }], ['horloge', { label: 'Calendrier', pos: [-3, 7.6, -10] }],
+  ['lesions', { label: 'Conséquences', pos: [12.5, 4.8, 9.8] }], ['archives', { label: 'Qualité des données', pos: [16.6, 4, -1.6] }]]);
+const badge_S = Object.fromEntries([...Object.entries(RISKS).map(([k, r]) => [k, s => r.circs.reduce((t, c) => t + s.circ[c], 0)]),
+  ['profil', s => s.n], ['horloge', s => s.n], ['lesions', s => s.arret], ['archives', () => null]]);
+const BADGE_LABEL_S = Object.fromEntries([...Object.entries(RISKS).map(([k, r]) => [k, title(r.big.split(' (')[0])]), ['profil', 'Accidents déclarés'], ['horloge', 'Accidents déclarés'], ['lesions', 'Accidents avec arrêt de travail']]);
+function riskFiche(id) {
+  return s => {
+    const R = RISKS[id], x = s.rows.filter(r => R.circs.includes(r.circ)), n = x.length, a = x.filter(r => r.arret).length;
+    const by = (f, keys) => keys.map(k => { const g = x.filter(r => r[f] === k); return [k, g.length, g.filter(r => r.arret).length]; }).filter(e => e[1]);
+    const st = {}; x.forEach(r => st[r.struct] = (st[r.struct] || 0) + 1);
+    return { ey: R.ey, ti: R.ti, html: `<div class="big"><b>${n}</b><span>${R.big}, soit ${pc(n, s.n)} des accidents</span></div>
+      <div class="duo"><div><b>${pc(a, n)}</b><small>avec arrêt (moyenne ${pc(s.arret, s.n)})</small></div><div><b>${n ? f1(x.reduce((t, r) => t + r.age, 0) / n) : '–'}</b><small>âge moyen des agents</small></div></div>
+      <p class="insight">${R.insight}</p>
+      ${dirFilter === 'all' ? sec('Par direction', bars(by('dir', DIRCODES).sort((p, q) => q[1] - p[1]).map(([k, v, ar]) => [`${k} · ${DIRS[k][1]}`, v, ar]), n, { rate: true })) : ''}
+      ${sec("Activité au moment de l'accident", bars(by('act', S_ACTS.filter(t => t !== 'Non précisée')), n))}
+      ${sec('Lésions', bars(by('lesion', S_LES.filter(t => t !== 'Non renseignée')), n, { cls: 'hot' }))}
+      ${sec('Services les plus touchés', bars(Object.entries(st).sort((p, q) => q[1] - p[1]).slice(0, 6).map(([k, v]) => [title(k), v]), n))}
+      ${sec("Heure de l'accident", bars(by('heure', S_TH.filter(t => t !== 'Non renseignée')), n, { cls: 'tl' }))}
+      ${reco(R.reco)}` };
+  };
+}
+const FICHES_S = Object.fromEntries(Object.keys(RISKS).map(k => [k, riskFiche(k)]));
+FICHES_S.profil = s => {
+  const rows = DIRCODES.map(c => [c, s.dir[c][0], s.dir[c][1], dirRate(DATA, year, c)]).filter(e => e[1]).sort((a, b) => b[1] - a[1]);
+  const max = Math.max(1, ...rows.map(e => e[1])), ref = rateS(DATA, year, 'all');
+  return { ey: 'Agents et directions', ti: 'Qui est concerné ?', html:
+    `<div class="big"><b>${s.n}</b><span>accidents · âge moyen ${f1(s.age)} ans · ${pc(s.cat['C'][0], s.n)} en catégorie C</span></div>
+    <p class="insight">Les accidents se concentrent dans les <strong>directions de terrain</strong> : éducation et petite enfance, entretien et restauration, espace public. Les hommes ont moins d'accidents mais plus souvent un arrêt.</p>
+    ${dirFilter === 'all' ? sec(`Par direction · taux pour 100 postes (collectivité ${f1(ref)})`, rows.map(([c, n, a, r]) => `<div class="br"><span class="bl" title="${DIRS[c][0]}">${c} · ${DIRS[c][1]}</span><span class="bt"><i class="${r && ref && r >= ref * 1.5 ? 'hot' : ''}" style="width:${100 * n / max}%"></i></span><span class="bv">${n} <em>${pc(a, n)} arrêt</em><span class="rt">${r ? f1(r) : '–'}</span></span></div>`).join('')) : ''}
+    ${sec('Sexe', bars(R(s.sexe), s.n, { rate: true }))}
+    ${sec("Tranche d'âge", bars(R(s.ages), s.n, { rate: true }))}
+    ${sec('Statut', bars(R(s.statut).map(([k, n, a]) => [k.replace('Fonctionnaire (CNRACL)', 'Fonctionnaires').replace('Contractuel / régime général', 'Contractuels / RG'), n, a]), s.n, { rate: true }))}
+    ${sec('Catégorie', bars(R(s.cat), s.n, { rate: true }))}
+    ${sec('Filière', bars(R(s.filiere), s.n, { rate: true, cls: 'tl' }))}
+    <p class="note">Taux approché : accidents par an rapportés aux postes des organigrammes 2026. À recalculer avec les effectifs du RSU. ${s.multiAgents} agents ont déclaré plusieurs accidents.</p>` };
+};
+FICHES_S.lesions = s => ({ ey: 'Conséquences', ti: 'Lésions et arrêts de travail', html:
+  `<div class="big"><b>${s.arret}</b><span>accidents avec arrêt de travail, soit ${pc(s.arret, s.n)} des déclarations</span></div>
+  <p class="insight">Surtout des douleurs et contusions. Les <strong>fractures et lumbagos</strong> donnent le plus souvent un arrêt ; les mains et les doigts signalent les coincements et coupures.</p>
+  ${sec('Nature de la lésion principale', bars(S_LES.filter(l => s.lesion[l] && l !== 'Non renseignée').map(l => { const g = s.rows.filter(r => r.lesion === l); return [l, g.length, g.filter(r => r.arret).length]; }), s.n, { rate: true }))}
+  ${sec('Zone du corps atteinte', bars(V(s.zone).filter(e => e[1] && e[0] !== 'Non renseigné'), s.n))}
+  ${sec("Part avec arrêt selon l'âge", bars(R(s.ages), s.n, { rate: true }))}` });
+FICHES_S.archives = s => {
+  const q = DATA.quality, ys = Object.keys(q).filter(k => k !== 'all'), col = v => `hsl(${120 - 120 * v} 65% ${isDark() ? 60 : 78}%)`;
+  const tt = s.rows.filter(r => r.type === 'T').length, np = s.circ['Non précisé'], cf = s.rows.filter(r => r.conf).length;
+  return { ey: 'Qualité des données', ti: 'Ce que les déclarations ne disent pas', html:
+    `<div class="big"><b>${Math.round(q[year]['Récit'] * 100)} %</b><span>des déclarations (${yearLabel()}) n'ont pas de récit</span></div>
+    <div class="duo"><div><b>${np}</b><small>accidents de famille « non précisée » (ni récit, ni cause)</small></div><div><b>${tt}</b><small>déclarations en « accident du travail » au lieu de « service »</small></div></div>
+    ${sec('Part de champs vides', `<div style="overflow-x:auto"><table class="heat"><tr><th>Champ</th>${ys.map(y => `<th>${y}</th>`).join('')}</tr>${['Récit', 'Cause 1'].map(f => `<tr><td>${f}</td>${ys.map(y => `<td style="background:${col(q[y][f])}">${Math.round(q[y][f] * 100)}</td>`).join('')}</tr>`).join('')}<tr><td>Délai médian (j)</td>${ys.map(y => `<td style="background:${col(Math.min(1, q[y].delai / 150))}">${Math.round(q[y].delai)}</td>`).join('')}</tr></table></div>`)}
+    <p class="note">${cf} déclarations ont un rattachement à une direction déduit ou incertain. Malaises : ${s.circ['Malaise']}.</p>
+    ${reco('Un seul libellé (« accident de service ») avec le statut dans un champ séparé, récit et cause obligatoires, jours d\'arrêt saisis, direction ajoutée à l\'extraction.')}` };
+};
+FICHES_S.horloge = FICHES_T.horloge;
+const IND_S = [
+  ['Accidents déclarés', s => s.n, 'n', 1], ['Avec arrêt de travail', s => s.arret, 'n', 1], ['Part avec arrêt', s => s.n ? s.arret / s.n : 0, 'p', 1],
+  ['Femmes', s => s.n ? s.sexe['Femme'][0] / s.n : 0, 'p', 0], ['50 ans et plus', s => s.n ? (s.ages['50-59 ans'][0] + s.ages['60 ans et +'][0]) / s.n : 0, 'p', 0],
+  ['Contractuels / RG', s => s.n ? s.statut[STATUTS[1]][0] / s.n : 0, 'p', 0], ['Âge moyen', s => s.age, 'a', 0],
+  ...Object.values(RISKS).map(r => [r.label, s => r.circs.reduce((t, c) => t + s.circ[c], 0), 'n', 1]),
+  ['Fractures, entorses', s => s.lesion['Fracture'] + s.lesion['Entorse'], 'n', 1]];
+
+/* ---------------------------------------------------------------- scène : le lieu de travail */
+ROOT = gS;
+box(38, 1.4, 28, tm.side, 0, -1.4, 0); box(38, .02, 28, tm.ground, 0, 0, 0);
+const courMat = fixed('#E9DDC6');
+box(15, .05, 7.5, courMat, -11.5, 0, -2.6);                               // cour d'école
+[[13, -8.5, 11, 8], [-3, -9.5, 4, 7], [16.5, -1.5, 4, 4], [0, 9.8, 2.5, 6.5]].forEach(([x, z, w, d]) => box(w, .06, d, tm.grass, x, 0, z));
+box(38, .1, 3.4, tm.walk, 0, 0, 4);                                       // allée piétonne du site
+box(7, .08, 3, fixed('#C9CFD9'), .5, 0, 4);                                 // aire du dépôt des engins
+for (let x = -2.5; x < 4.1; x += 1.6) box(.08, .02, 2.6, tm.mark, x, .09, 4);
+// école + préau + aire de jeux
+const gEcole = group(-11.5, -9.3, .15, 'enfant');
+box(11, 3, 4, tm.wall, 0, 0, 0, gEcole); box(11.4, .3, 4.4, C.teal, 0, 3, 0, gEcole); windows(gEcole, 11, 3, 4, 1, 6, 1);
+const gPreau = group(-6, -4.5, .3, 'chute');
+[[-1.6, -1.2], [1.6, -1.2], [-1.6, 1.2], [1.6, 1.2]].forEach(([x, z]) => cyl(.07, .07, 2.4, C.dark, x, 0, z, gPreau, 6));
+box(3.8, .14, 3, C.navy, 0, 2.4, 0, gPreau);
+const wet = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.1, .02, 24), new THREE.MeshStandardMaterial({ color: '#9fd3f2', transparent: true, opacity: .6, roughness: .05 })); wet.position.y = .08; gPreau.add(wet);
+const signW = new THREE.Group(); signW.position.set(.9, 0, .6); gPreau.add(signW);
+[-.12, .12].forEach(z => { const p = new THREE.Mesh(new THREE.BoxGeometry(.5, .8, .03), C.yellow); p.position.set(0, .4, z); p.rotation.x = z > 0 ? -.25 : .25; signW.add(p); });
+const gJeux = group(-14.8, -2.2, .4, 'enfant');
+box(.3, 1.6, .3, C.red, -.9, 0, 0, gJeux); box(1.2, .12, .8, C.red, -.9, 1.6, 0, gJeux);
+const slide = box(.7, .08, 2.2, C.yellow, .1, .8, 0, gJeux); slide.rotation.x = 0; slide.rotation.z = -.55; slide.position.set(.2, 1, 0);
+const kids = []; for (let i = 0; i < 6; i++) { const k = person(PALP[(i + 2) % PALP.length]); k.scale.setScalar(.55); kids.push({ g: k, a: i * 1.05, r: 1.6 + (i % 3) * .8, sp: .6 + (i % 2) * .3 }); }
+tree(-17.5, -6, .8); tree(-5.2, -12, .7);
+// bâtiment à escalier extérieur + escabeau
+const gEsc = group(2.5, -9.2, .35, 'escalier');
+box(5, 5, 4, tm.wall, 0, 0, 0, gEsc); box(5.3, .3, 4.3, C.blue, 0, 5, 0, gEsc); windows(gEsc, 5, 5, 4, 2, 3, 1);
+for (let i = 0; i < 9; i++) box(1.2, .25, .5, C.grey, 3.1, i * .5, 1.8 - i * .45, gEsc);
+box(.06, 1, 4.2, C.dark, 3.7, 4.2, 0, gEsc).rotation.x = .82;
+const ladder = new THREE.Group(); ladder.position.set(5.6, 0, -5.6); ROOT.add(ladder);
+[-.25, .25].forEach(z => { const l = new THREE.Mesh(new THREE.BoxGeometry(.06, 2, .06), C.orange); l.position.set(0, 1, z); l.rotation.x = z > 0 ? -.2 : .2; ladder.add(l); });
+for (let i = 1; i < 5; i++) { const r2 = new THREE.Mesh(new THREE.BoxGeometry(.05, .05, .5), C.orange); r2.position.set(0, i * .4, 0); ladder.add(r2); }
+// Hôtel de ville (qui est concerné ?)
+const gMairie = group(12.5, -8.5, .5, 'profil');
+box(8, 4.2, 5.2, tm.wall, 0, 0, 0, gMairie); box(8.4, .35, 5.6, C.navy, 0, 4.2, 0, gMairie);
+box(3, 1.3, 3, tm.wall, 0, 4.55, 0, gMairie); box(3.2, .25, 3.2, C.red, 0, 5.85, 0, gMairie);
+for (let i = -1.5; i <= 1.51; i += 1) box(.28, 2.4, .28, tm.wall, 4.3, 0, i, gMairie);
+windows(gMairie, 8, 4.2, 5.2, 2, 4, .9);
+cyl(.05, .05, 3, C.dark, -3.2, 4.55, 2.2, gMairie, 6); const flagS = box(1.2, .7, .03, C.red, -2.6, 6.8, 2.2, gMairie);
+(() => { const img = new Image(); img.onload = () => { const cv = document.createElement('canvas'); cv.width = 640; cv.height = 300; const g = cv.getContext('2d');
+  g.fillStyle = '#fff'; g.fillRect(0, 0, 640, 300); g.drawImage(img, 20, 0, 600, 298); const tex = new THREE.CanvasTexture(cv);
+  const big = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 1.97), new THREE.MeshBasicMaterial({ map: tex })); big.position.set(0, 2.95, 2.62); gMairie.add(big);
+  const s2 = new THREE.Mesh(new THREE.PlaneGeometry(2.7, 1.26), new THREE.MeshBasicMaterial({ map: tex })); s2.position.set(0, 5.2, 1.52); gMairie.add(s2); }; img.src = LOGO; })();
+tree(8, -12.3, .8); tree(18, -11, .8);
+// accueil, guichet (agressions)
+const gAcc = group(7, -2.4, .55, 'agression');
+box(3.6, 2.4, 2.6, tm.wall, 0, 0, 0, gAcc); box(3.9, .2, 2.9, C.red, 0, 2.4, 0, gAcc);
+box(3.4, 1.1, .5, C.navy, 0, 0, 1.6, gAcc); box(3.4, .9, .04, C.glass, 0, 1.1, 1.4, gAcc);
+const agent1 = person('#007E7A', gAcc); agent1.position.set(-.6, 0, .7); const usager = person('#7A4FA3', gAcc); usager.position.set(.4, 0, 2.5); usager.rotation.y = Math.PI;
+// tour de l'horloge
+const gHor = group(-3, -10, .25, 'horloge');
+box(1.4, 5.2, 1.4, tm.wall, 0, 0, 0, gHor); box(1.8, .3, 1.8, C.navy, 0, 5.2, 0, gHor);
+const sp2 = new THREE.Mesh(new THREE.ConeGeometry(1.05, 1.2, 4), C.red); sp2.rotation.y = Math.PI / 4; sp2.position.y = 6.1; gHor.add(sp2);
+const faceS = new THREE.Mesh(new THREE.CylinderGeometry(.5, .5, .05, 24), fixed('#FFFFFF')); faceS.rotation.x = Math.PI / 2; faceS.position.set(0, 4.3, .72); gHor.add(faceS);
+const handS = new THREE.Group(); handS.position.set(0, 4.3, .76); gHor.add(handS); const hS = new THREE.Mesh(new THREE.BoxGeometry(.05, .36, .03), C.red); hS.position.y = .15; handS.add(hS);
+// restaurant scolaire, cuisine (brûlures)
+const gCuis = group(-12.5, 9.2, .6, 'brulure');
+box(7, 2.8, 4.4, tm.wall, 0, 0, 0, gCuis); box(7.3, .3, 4.7, C.yellow, 0, 2.8, 0, gCuis); windows(gCuis, 7, 2.8, 4.4, 1, 4, 1);
+box(.5, 1.4, .5, C.grey, 2.4, 3.1, -1, gCuis);
+box(2.2, .9, .9, C.dark, -1.6, 0, 2.6, gCuis); box(.5, .4, .5, C.grey, -2.1, .9, 2.6, gCuis); box(.5, .3, .5, C.grey, -1.1, .9, 2.6, gCuis);
+const steam = []; for (let i = 0; i < 7; i++) { const s3 = new THREE.Mesh(new THREE.SphereGeometry(.22, 8, 6), new THREE.MeshStandardMaterial({ color: '#ffffff', transparent: true, opacity: .55 })); s3.position.set(2.4, 4.5 + i * .4, -1); gCuis.add(s3); steam.push({ m: s3, p: i / 7 }); }
+tree(-17.5, 12.5, .8);
+// aire de manutention : conteneurs, cartons, chariot
+const gMan = group(-4.5, 9.6, .7, 'manut');
+[[-1.6, C.teal], [-.7, C.grey], [.2, C.yellow]].forEach(([x, m]) => { box(.8, 1.1, .8, m, x, 0, -1.6, gMan); box(.84, .08, .84, C.dark, x, 1.1, -1.6, gMan); });
+[[1.3, 0, -1.3], [1.3, .5, -1.3], [1.9, 0, -1.4], [1.6, 1, -1.35]].forEach(([x, y, z]) => box(.55, .5, .55, fixed('#C9A26B'), x, y, z, gMan));
+const chariot = new THREE.Group(); gMan.add(chariot); box(1, .7, .6, C.blue, 0, .25, 0, chariot); box(.06, .9, .6, C.dark, -.55, .3, 0, chariot);
+const pusher = person('#B7001C', chariot); pusher.position.set(-.95, 0, 0); pusher.rotation.y = -Math.PI / 2;
+// atelier (heurts, coincements)
+const gAt = group(3.5, 9.6, .8, 'heurt');
+box(5.5, 3.2, 4, tm.wall, 0, 0, 0, gAt); box(5.8, .3, 4.3, C.navy, 0, 3.2, 0, gAt);
+for (let i = 0; i < 6; i++) box(2.6, .3, .05, i % 2 ? C.orange : C.dark, -.8, .15 + i * .38, 2.03, gAt);
+box(1.6, .9, .7, fixed('#8A6A4F'), 1.7, 0, 2.6, gAt); box(.3, .3, .3, C.red, 1.6, .9, 2.6, gAt);
+// santé (conséquences) + conteneur AES
+const gSan = group(12.5, 9.8, .9, 'lesions');
+box(5, 2.8, 4.4, tm.wall, 0, 0, 0, gSan); box(5.3, .3, 4.7, C.navy, 0, 2.8, 0, gSan);
+box(.06, 1.2, .38, C.red, 2.53, 1.1, 0, gSan); box(.06, .38, 1.2, C.red, 2.53, 1.51, 0, gSan); box(1.3, .08, .4, C.red, 0, 3.1, 0, gSan); box(.4, .08, 1.3, C.red, 0, 3.1, 0, gSan);
+windows(gSan, 5, 2.8, 4.4, 1, 3, 1);
+const gAes = group(17.2, 7.4, .95, 'coupure');
+box(.6, .7, .5, C.yellow, 0, 0, 0, gAes); box(.62, .1, .52, C.red, 0, .7, 0, gAes); box(1, .8, .6, fixed('#E9EDF3'), 1, 0, 0, gAes);
+// archives (qualité)
+const gArS = group(16.6, -1.6, .85, 'archives');
+box(3, 2, 2.6, tm.wall, 0, 0, 0, gArS); box(3.3, .25, 2.9, C.blue, 0, 2, 0, gArS);
+[[0, C.navy], [.3, C.teal], [.6, C.red]].forEach(([y, m]) => box(.8, .28, 1, m, -2, y, 0, gArS));
+// véhicules : benne et balayeuse sur la voie
+function truck(color) { const g = new THREE.Group(); ROOT.add(g);
+  const cab = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.3, 1.4), fixed(color)); cab.position.set(1.4, .95, 0); cab.castShadow = true; g.add(cab);
+  const bed = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.6, 1.5), fixed('#E9EDF3')); bed.position.set(-.5, 1.1, 0); bed.castShadow = true; g.add(bed);
+  [[-1.2, -1], [1.3, -1], [-1.2, 1], [1.3, 1]].forEach(([a, s4]) => { const w = new THREE.Mesh(new THREE.CylinderGeometry(.3, .3, .2, 12), C.dark); w.rotation.x = Math.PI / 2; w.position.set(a, .3, s4 * .72); g.add(w); });
+  const marche = new THREE.Mesh(new THREE.BoxGeometry(.4, .08, .3), C.orange); marche.position.set(-1.9, .5, .6); g.add(marche); return g; }
+function sweeper() { const g = new THREE.Group(); ROOT.add(g);
+  const b = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.2, 1.1), fixed('#E0A100')); b.position.y = .85; b.castShadow = true; g.add(b);
+  const brush = new THREE.Mesh(new THREE.CylinderGeometry(.35, .35, .15, 12), fixed('#7A4FA3')); brush.position.set(.9, .2, .45); g.add(brush);
+  [[-.6, -1], [.6, -1], [-.6, 1], [.6, 1]].forEach(([a, s4]) => { const w = new THREE.Mesh(new THREE.CylinderGeometry(.25, .25, .15, 12), C.dark); w.rotation.x = Math.PI / 2; w.position.set(a, .25, s4 * .55); g.add(w); });
+  return { g, brush }; }
+const benne = truck('#007E7A'); benne.position.set(-1, 0, 4); const balay = sweeper(); balay.g.position.set(2.6, 0, 4.2); balay.g.rotation.y = Math.PI;
+const rideur = person('#E0A100'); rideur.position.set(-3, 0, 3.4); rideur.rotation.y = Math.PI / 2;
+tree(-8, 13, .7); tree(17.5, 13, .7); tree(-18, 1, .7);
+ROOT = gT;
+function animS(dt) {
+  if (!gS.visible) return;
+  kids.forEach(k => { k.a += k.sp * dt; k.g.position.set(-11.5 + Math.cos(k.a) * k.r * 1.6, .03 + Math.abs(Math.sin(k.a * 6)) * .08, -2.6 + Math.sin(k.a) * k.r * .7); k.g.rotation.y = -k.a; });
+  const cx = Math.sin(T * .45) * 2.4; chariot.position.set(cx, 0, .8); chariot.rotation.y = Math.cos(T * .45) >= 0 ? 0 : Math.PI;
+  balay.brush.rotation.y += dt * 4; rideur.position.y = Math.max(0, Math.sin(T * 1.6)) * .45;   // agent qui monte et descend du marchepied
+  steam.forEach(s5 => { s5.p = (s5.p + dt * .25) % 1; s5.m.position.y = 4.4 + s5.p * 3; s5.m.material.opacity = .55 * (1 - s5.p); s5.m.scale.setScalar(.6 + s5.p); });
+  handS.rotation.z = -T * .6; flagS.rotation.y = Math.sin(T * 2.4) * .25;
+  wet.material.opacity = .45 + Math.sin(T * 2) * .15; usager.rotation.z = Math.sin(T * 5) * .05;
+}
+function kpisS(s) {
+  return [['', nb(s.n), 'accidents'], ['red', pc(s.arret, s.n), 'avec arrêt'], ['blue', f1(rateS(DATA, year, dirFilter)), 'pour 100 postes / an'], ['teal', pc(s.cat['C'][0], s.n), 'catégorie C']]
+    .map(([c, v, l]) => `<div class="kpi ${c}"><b>${v}</b><small>${l}</small></div>`).join('');
+}
+function kpisT(s) {
+  const p50 = s.ages['50-59 ans'][0] + s.ages['60 ans et +'][0];
+  return [['', nb(s.n), 'accidents'], ['red', pc(s.arret, s.n), 'avec arrêt'], ['teal', pc(s.sexe['Femme'][0], s.n), 'femmes'], ['blue', pc(p50, s.n), '50 ans et +']]
+    .map(([c, v, l]) => `<div class="kpi ${c}"><b>${v}</b><small>${l}</small></div>`).join('');
+}
+
+/* ================================================================ MOTEURS PAR TYPE D'ÉVÈNEMENT */
+const ENG = {
+  trajet: { KEYS: KEYS_T, scope: scopeT, detect: detectT, qf: { 'Moyen de locomotion': 'eLoco', 'Facteur / cause': 'eCause', 'Récit': 'eRecit', 'Lésion': 'eLes' },
+    HS: HS_T, badge: badge_T, FICHES: FICHES_T, BADGE_LABEL: BADGE_LABEL_T, IND: IND_T, root: gT, kpis: kpisT, store: 'trajets-rows',
+    archBadge: q => Math.round(q['Facteur / cause'] * 100) + '%', bigIds: ['travail', 'horloge', 'archives'], h1: 'Trajets <span>à risque</span>',
+    CMPDIMS: [['Circonstances', 'circ', () => CIRCS.filter(c => c !== 'Récit non renseigné')], ['Mode de déplacement', 'mode', () => MODES.filter(m => m !== 'Non renseigné')],
+      ['Direction', 'dirc', () => DIRCODES], ["Tranche d'âge", 'ages', () => AGES], ['Sexe', 'sexe', () => ['Femme', 'Homme']], ['Catégorie', 'cat', () => ['A', 'B', 'C', 'Hors cat.']],
+      ['Statut', 'statut', () => STATUTS], ['Famille de métier', 'filiere', () => FILIERES], ['Saison', 'saison', () => SAISONS], ['Lésion principale', 'lesion', () => LESIONS.filter(l => l !== 'Non renseignée')]] },
+  service: { KEYS: KEYS_S, scope: scopeS, detect: detectS, qf: { 'Récit': 'eRecit', 'Cause 1': 'eCause' },
+    HS: HS_S, badge: badge_S, FICHES: FICHES_S, BADGE_LABEL: BADGE_LABEL_S, IND: IND_S, root: gS, kpis: kpisS, store: 'service-rows',
+    archBadge: q => Math.round(q['Récit'] * 100) + '%', bigIds: ['profil', 'horloge', 'archives'], h1: 'Le travail <span>à risque</span>',
+    CMPDIMS: [['Familles de risque', 'circ', () => S_CIRCS.filter(c => c !== 'Non précisé')], ['Direction', 'dir', () => DIRCODES], ["Activité au moment de l'accident", 'act', () => S_ACTS.filter(a => a !== 'Non précisée')],
+      ["Tranche d'âge", 'ages', () => AGES], ['Sexe', 'sexe', () => ['Femme', 'Homme']], ['Catégorie', 'cat', () => ['A', 'B', 'C', 'Hors cat.']], ['Statut', 'statut', () => STATUTS],
+      ['Filière', 'filiere', () => S_FIL], ['Lésion principale', 'lesion', () => S_LES.filter(l => l !== 'Non renseignée')]] },
+};
+const E = () => ENG[MODE];
+function buildDirSel() {
+  const sel = $('#dirSel'), c = {}; ALL[MODE].forEach(r => c[r.dir] = (c[r.dir] || 0) + 1);
+  sel.innerHTML = `<option value="all">Toutes les directions (${ALL[MODE].length})</option>` + Object.entries(c).sort((a, b) => b[1] - a[1])
+    .map(([k, n]) => `<option value="${k}" ${k === dirFilter ? 'selected' : ''}>${k} · ${DIRS[k] ? DIRS[k][1] : k} (${n})</option>`).join('');
+  sel.onchange = () => { dirFilter = sel.value; const keep = year; applyFilter(); if (DATA.scopes[keep]) year = keep; buildYears(); refresh(); };
+}
+function setMode(m, first) {
+  if (!first && current) closePanel();
+  MODE = m; const e = E();
+  HS = e.HS; badge = e.badge; FICHES = e.FICHES; BADGE_LABEL = e.BADGE_LABEL; IND = e.IND;
+  gT.visible = m === 'trajet'; gS.visible = m === 'service'; gM.visible = m === 'mp'; snow.visible = m === 'trajet' && winterOn;
+  [HS_T, HS_S, HS_M].forEach(H => Object.values(H).forEach(h => { h.el.style.display = H === HS ? '' : 'none'; h.el.style.opacity = 0; }));
+  document.querySelectorAll('.type[data-mode]').forEach(b => { b.classList.toggle('on', b.dataset.mode === m); b.setAttribute('aria-pressed', String(b.dataset.mode === m)); });
+  $('#h1').innerHTML = e.h1; $('#winter').hidden = m !== 'trajet'; CMP.da = CMP.db = null;
+  dirFilter = 'all'; year = 'all'; CMP.a = CMP.b = null; introT0 = clock.elapsedTime;
+  applyFilter(); buildDirSel(); buildYears(); refresh();
+  if (!first && innerWidth > 760) openAlerts();
+}
+document.querySelectorAll('.type[data-mode]').forEach(b => b.onclick = () => { if (b.dataset.mode !== MODE) setMode(b.dataset.mode); });
+
+/* ================================================================ COMPARAISON ENTRE DIRECTIONS
+   Deux directions (ou une direction et la collectivité) sur la période choisie avec les années.
+   Les familles de risque sont comparées en parts, car les directions n'ont pas la même taille. */
+function renderCompare() {
+  (CMP.kind === 'dirs' ? renderCompareDirs : renderCompareYears)();
+  $('#pBody').insertAdjacentHTML('afterbegin', `<div class="seg" id="ckind" role="group" aria-label="Type de comparaison"><button data-k="annees" aria-pressed="${CMP.kind !== 'dirs'}">Entre années</button><button data-k="dirs" aria-pressed="${CMP.kind === 'dirs'}">Entre directions</button></div>`);
+  $('#ckind').querySelectorAll('button').forEach(b => b.onclick = () => { CMP.kind = b.dataset.k; refresh(); });
+}
+function renderCompareDirs() {
+  const cnt0 = {}; ALL[MODE].forEach(r => cnt0[r.dir] = (cnt0[r.dir] || 0) + 1);
+  const codes = Object.keys(cnt0).sort((a, b) => cnt0[b] - cnt0[a]);
+  if (!CMP.da || !(CMP.da === 'all' || codes.includes(CMP.da))) CMP.da = codes[0];
+  if (!CMP.db || !(CMP.db === 'all' || codes.includes(CMP.db)) || CMP.db === CMP.da) CMP.db = codes.find(c => c !== CMP.da) || 'all';
+  const per = r => year === 'all' || String(r.y) === String(year);
+  const sc = c => E().scope(ALL[MODE].filter(r => (c === 'all' || r.dir === c) && per(r)));
+  const A = sc(CMP.da), B = sc(CMP.db), sv = MODE === 'service';
+  const lab = c => c === 'all' ? 'Collectivité' : `${c} · ${DIRS[c] ? DIRS[c][1] : c}`;
+  const short = c => c === 'all' ? 'Coll.' : c;
+  const opt = sel => ['all', ...codes].map(c => `<option value="${c}" ${c === sel ? 'selected' : ''}>${lab(c)}</option>`).join('');
+  const rt = c => sv ? dirRate(DATA, year, c) : null;
+  const ind = E().IND.map(([l, f, k, bad], i) => (k === 'n' && i > 1) ? [l + ' (part)', s => s.n ? f(s) / s.n : 0, 'p', bad] : [l, f, k, bad]);
+  if (sv) ind.splice(3, 0, ['Accidents / an pour 100 postes', s => s === A ? rt(CMP.da) : rt(CMP.db), 'r', 1]);
+  const fv = (v, k) => v == null ? '–' : k === 'r' ? f1(v) : fmtv(k === 'a' ? Math.round(v * 10) / 10 : v, k);
+  const dl = (a, b, k, bad) => a == null || b == null ? '' : k === 'r' ? delta(Math.round(a * 10) / 10, Math.round(b * 10) / 10, 'a', bad) : delta(a, b, k, bad);
+  const share = (s, f, k) => { const v = s[f][k]; const n = v ? (Array.isArray(v) ? v[0] : v) : 0; return s.n ? n / s.n : 0; };
+  const dualP = (t, keys, f) => { const max = Math.max(.01, ...keys.map(k => Math.max(share(A, f, k), share(B, f, k))));
+    return `<div class="sec"><h3>${t} (part dans chaque direction)</h3>${keys.map(k => { const a = share(A, f, k), b = share(B, f, k); if (!a && !b) return '';
+      return `<div class="dual"><span class="bl" title="${k}">${k}</span><span class="bt"><i class="a" style="width:${100 * a / max}%"></i></span><span class="vals">${Math.round(a * 100)} → <b>${Math.round(b * 100)} %</b> ${delta(a, b, 'p', 1)}</span><span class="bt"><i style="width:${100 * b / max}%"></i></span></div>`; }).join('')}</div>`; };
+  // matrice : toutes les directions
+  const fam = E().CMPDIMS[0][2]().slice(0, 6);
+  const rows = codes.map(c => [c, sc(c)]).filter(([, s]) => s.n);
+  const cell = (v, m) => `<td style="background:hsl(355 75% ${97 - 32 * Math.min(1, v / (m || 1))}%)">`;
+  const mxs = fam.map(k => Math.max(...rows.map(([, s]) => share(s, E().fam, k))));
+  const mtx = `<div style="overflow-x:auto"><table class="ctab mtx"><tr><th>Direction</th><th>Nb</th><th>% arrêt</th>${sv ? '<th>/100 p.</th>' : ''}${fam.map(k => `<th title="${k}">${k.split(/[ ,/]/)[0].slice(0, 9)}</th>`).join('')}</tr>${rows.map(([c, s]) =>
+    `<tr><td title="${lab(c)}">${c}</td><td>${s.n}</td>${cell(s.arret / s.n, .8)}${Math.round(100 * s.arret / s.n)}</td>${sv ? `<td>${f1(rt(c))}</td>` : ''}${fam.map((k, i) => `${cell(share(s, E().fam, k), mxs[i])}${Math.round(100 * share(s, E().fam, k))}</td>`).join('')}</tr>`).join('')}</table></div>`;
+  // graphique : toutes les directions (nombre, part ou taux), barres empilées par famille de risque
+  const CCOL = ['#D64545', '#E0A100', '#F2C46D', '#7A4FA3', '#B7001C', '#4D9DE0', '#3B4252', '#C25E7A', '#F07A1A', '#005DAD', '#5B8C3A', '#2BB3AC'];
+  const famAll = E().CMPDIMS[0][2](), cm = CMP.chart && (CMP.chart !== 'taux' || sv) ? CMP.chart : 'nb', ref = sv ? dirRate(DATA, year, 'all') : null;
+  const data = rows.map(([c, s]) => ({ c, s, r: rt(c) })).filter(d => cm !== 'taux' || d.r != null)
+    .sort((a, b) => cm === 'taux' ? b.r - a.r : cm === 'part' ? (share(b.s, E().fam, famAll[0]) - share(a.s, E().fam, famAll[0])) : b.s.n - a.s.n);
+  const W = 372, RH = 21, X0 = 54, BW = W - X0 - 44, maxN = Math.max(1, ...data.map(d => d.s.n)), maxR = Math.max(ref || 0, ...data.map(d => d.r || 0));
+  const svg = `<svg viewBox="0 0 ${W} ${data.length * RH + 24}" width="100%" role="img" aria-label="Accidents par direction" style="display:block">
+    ${data.map((d, i) => { const y = 6 + i * RH, sel = d.c === CMP.da || d.c === CMP.db; let x = X0, segs = '';
+      if (cm === 'taux') { const w = BW * d.r / maxR; segs = `<rect x="${X0}" y="${y + 3}" width="${w}" height="${RH - 7}" rx="3" fill="${ref && d.r >= ref * 1.5 ? '#B7001C' : '#005DAD'}"/><text x="${X0 + w + 4}" y="${y + RH / 2 + 3}" font-size="10" font-family="IBM Plex Mono, monospace" fill="var(--ink)">${f1(d.r)}</text>`; }
+      else { const tot = cm === 'part' ? d.s.n : maxN;
+        famAll.forEach((k, j) => { const v = d.s[E().fam][k] || 0; if (!v) return; const w = BW * v / tot; segs += `<rect x="${x}" y="${y + 3}" width="${w}" height="${RH - 7}" fill="${CCOL[j % CCOL.length]}"><title>${d.c} · ${k} : ${v} (${Math.round(100 * v / d.s.n)} %)</title></rect>`; x += w; });
+        const rest = d.s.n - famAll.reduce((t, k) => t + (d.s[E().fam][k] || 0), 0); if (rest > 0) { const w = BW * rest / tot; segs += `<rect x="${x}" y="${y + 3}" width="${w}" height="${RH - 7}" fill="#C9CFD9"><title>${d.c} · non précisé : ${rest}</title></rect>`; x += w; }
+        segs += `<text x="${x + 4}" y="${y + RH / 2 + 3}" font-size="10" font-family="IBM Plex Mono, monospace" fill="var(--ink)">${cm === 'part' ? '' : d.s.n}</text>`; }
+      return `<g class="cbar" data-c="${d.c}" style="cursor:pointer">${sel ? `<rect x="0" y="${y}" width="${W}" height="${RH}" rx="4" fill="var(--chip)"/>` : ''}<text x="${X0 - 6}" y="${y + RH / 2 + 3}" text-anchor="end" font-size="10.5" font-weight="${sel ? 700 : 500}" fill="var(--ink)">${d.c}</text>${segs}<title>${lab(d.c)}</title></g>`; }).join('')}
+    ${cm === 'taux' && ref ? `<line x1="${X0 + BW * ref / maxR}" x2="${X0 + BW * ref / maxR}" y1="2" y2="${data.length * RH + 8}" stroke="#B57F00" stroke-dasharray="3 3"/><text x="${X0 + BW * ref / maxR + 3}" y="${data.length * RH + 20}" font-size="9.5" fill="#B57F00">collectivité ${f1(ref)}</text>` : ''}</svg>`;
+  const legendC = cm === 'taux' ? '' : `<div class="legend" style="margin-top:6px">${famAll.map((k, j) => `<span><i style="background:${CCOL[j % CCOL.length]}"></i>${k.split(',')[0].split(' (')[0]}</span>`).join('')}<span><i style="background:#C9CFD9"></i>non précisé</span></div>`;
+  const chart = `<div class="sec"><h3>Toutes les directions · ${yearLabel()}</h3>
+    <div class="seg" id="cmode" role="group" aria-label="Mesure du graphique"><button data-m="nb" aria-pressed="${cm === 'nb'}">Nombre</button><button data-m="part" aria-pressed="${cm === 'part'}">Part par famille</button>${sv ? `<button data-m="taux" aria-pressed="${cm === 'taux'}">Taux pour 100 postes</button>` : ''}</div>
+    <div style="margin-top:8px">${svg}</div>${legendC}
+    <p class="note">${cm === 'nb' ? 'Nombre d\'accidents par direction, découpé par famille de risque.' : cm === 'part' ? 'Part de chaque famille de risque dans la direction (100 % = tous ses accidents), triée selon la première famille.' : 'Accidents par an pour 100 postes (organigramme 2026) ; en rouge, au moins 1,5 fois le taux de la collectivité.'} Cliquez une barre pour la comparer à ${short(CMP.da)}.</p></div>`;
+  $('#pEy').textContent = `Comparaison entre directions · ${yearLabel()}`;
+  $('#pTi').textContent = `${CMP.da === 'all' ? 'Collectivité' : CMP.da} face à ${CMP.db === 'all' ? 'collectivité' : CMP.db}`;
+  $('#pBody').innerHTML = `<div class="cmpctl"><select id="dA" aria-label="Première direction">${opt(CMP.da)}</select><span>face à</span><select id="dB" aria-label="Seconde direction">${opt(CMP.db)}</select></div>
+    <p class="note">Période : ${year === 'all' ? 'toutes les années' : year} (choisissez l'année en haut). Les familles de risque sont comparées en parts, car les directions n'ont pas la même taille. Sur la maquette, les pastilles montrent l'écart de part entre les deux directions.</p>
+    ${chart}
+    <table class="ctab"><tr><th>Indicateur</th><th>${short(CMP.da)}</th><th>${short(CMP.db)}</th><th>Écart</th></tr>${ind.map(([l, f, k, bad]) => `<tr><td>${l}</td><td>${fv(f(A), k)}</td><td><b>${fv(f(B), k)}</b></td><td>${dl(f(A), f(B), k, bad)}</td></tr>`).join('')}</table>
+    ${E().CMPDIMS.filter(([, f]) => f !== 'dir' && f !== 'dirc').map(([t, f, keys]) => dualP(t, keys(), f)).join('')}
+    <div class="sec"><h3>Tableau de toutes les directions · ${yearLabel()}</h3>${mtx}<p class="note">Part de chaque famille de risque dans la direction (en %). Plus la case est foncée, plus la part est élevée dans sa colonne.${sv ? ' « /100 p. » : accidents par an pour 100 postes (organigramme 2026).' : ''}</p></div>`;
+  $('#dA').onchange = e => { CMP.da = e.target.value; refresh(); };
+  $('#dB').onchange = e => { CMP.db = e.target.value; refresh(); };
+  $('#cmode').querySelectorAll('button').forEach(b => b.onclick = () => { CMP.chart = b.dataset.m; refresh(); });
+  $('#pBody').querySelectorAll('.cbar').forEach(g => g.onclick = () => { if (g.dataset.c !== CMP.da) { CMP.db = g.dataset.c; refresh(); } });
+  Object.entries(HS).forEach(([id, h]) => { if (id === 'archives') return; const ct = h.el.querySelector('.ct');
+    if (E().bigIds.includes(id)) { ct.textContent = B.n; ct.className = 'ct'; return; }
+    const d = Math.round(((badge[id](B) || 0) / (B.n || 1) - (badge[id](A) || 0) / (A.n || 1)) * 100);
+    ct.textContent = (d > 0 ? '+' : d < 0 ? '−' : '±') + Math.abs(d) + '%'; ct.className = 'ct ' + (d > 0 ? 'up' : d < 0 ? 'down' : 'eq'); });
+}
+
+/* ================================================================ MODULE MALADIES PROFESSIONNELLES
+   Scène : un corps de femme et un corps d'homme ; les zones touchées s'allument selon le nombre de MP. */
+const EMB_M = { rows: [] };
+const KEYS_M = ['d', 'sexe', 'age', 'statut', 'cat', 'filiere', 'dir', 'struct', 'fam', 'patho', 'zones', 'tableau', 'arret', 'ag', 'delai', 'eRecit', 'doublon', 'prefA', 'incoh', 'conf', 'autres'];
+const M_FAM = ['TMS (troubles musculo-squelettiques)', 'Chimique', 'Biologique', 'Physique (bruit, vibrations)', 'Psychosocial', 'Non précisée'];
+const M_PATHO = ["Tendinopathie de l'épaule", 'Syndrome du canal carpien', 'Épicondylite (coude)', 'Tendinopathie poignet / main', 'Rachis (sciatique, lombalgie)', 'Membre inférieur (genou, cheville)', 'Non précisée'];
+const M_ZONES = { epaule: 'Épaule', coude: 'Coude', poignet: 'Poignet / main', bras: 'Bras / avant-bras', rachis: 'Rachis lombaire', genou: 'Genou', cheville: 'Cheville / pied' };
+const ZK = Object.keys(M_ZONES);
+
+/* --- portage de prep_mp.py pour l'import --- */
+const sideOf = t => /bilateral|droite et gauche|droit et gauche/.test(t) ? 'B' : /droit/.test(t) ? 'D' : /gauche/.test(t) ? 'G' : '';
+function zoneSiege(s) { const t = norm(s); if (!t.trim()) return null; let z = null;
+  if (t.includes('epaule')) z = 'epaule'; else if (t.includes('coude')) z = 'coude'; else if (/poignet|main|doigt|pouce|index/.test(t)) z = 'poignet';
+  else if (/avant-bras|bras/.test(t)) z = 'bras'; else if (/dos|lombaire|colonne|rachis/.test(t)) z = 'rachis'; else if (t.includes('genou')) z = 'genou'; else if (/cheville|pied|jambe/.test(t)) z = 'cheville';
+  return z ? [z, sideOf(t)] : null; }
+function zonesText(t) { const out = []; [[/epaule|supra|sus.epineux|sous.epineux|subscapulaire|coiffe|biceps/, 'epaule'], [/epicondyl|coude/, 'coude'], [/carpien|poignet|quervain|flechisseur|extenseur|pouce|main/, 'poignet'], [/sciati|lombai|l5|s1|hernie|rachis/, 'rachis'], [/genou/, 'genou']]
+  .forEach(([re, z]) => { const m = new RegExp(re.source + '[^.,+]{0,40}').exec(t); if (m) out.push([z, sideOf(m[0]) || sideOf(t)]); }); return out; }
+function pathoOf(t, zs) {
+  if (/carpien/.test(t)) return M_PATHO[1]; if (/epicondyl/.test(t)) return M_PATHO[2]; if (/epaule|supra|sus.epineux|subscapulaire|coiffe/.test(t)) return M_PATHO[0];
+  if (/quervain|flechisseur|extenseur|poignet|pouce|main/.test(t)) return M_PATHO[3]; if (/sciati|lombai|l5|hernie/.test(t)) return M_PATHO[4];
+  const z = zs.map(x => x[0]); if (z.includes('epaule')) return M_PATHO[0]; if (z.includes('coude')) return M_PATHO[2]; if (z.includes('poignet') || z.includes('bras')) return M_PATHO[3];
+  if (z.includes('rachis')) return M_PATHO[4]; if (z.includes('genou') || z.includes('cheville')) return M_PATHO[5]; return M_PATHO[6]; }
+function famOf(t, p, nat) {
+  if (/allerg|eczema|asthme|dermat|chimi|solvant|produit|phosphore/.test(t)) return M_FAM[1]; if (/infect|tubercul|hepatite|covid|leptospir|gale|biolog/.test(t)) return M_FAM[2];
+  if (/surdite|bruit|vibration/.test(t)) return M_FAM[3]; if (/depress|burn|epuisement|anxi|psych|stress/.test(t)) return M_FAM[4];
+  if (p !== M_PATHO[6] || nat.includes('periarticulaire')) return M_FAM[0]; if (/phosphore|chimi/.test(nat)) return M_FAM[1]; if (/infect|biolog/.test(nat)) return M_FAM[2]; return M_FAM[5]; }
+function deriveM(raw) {
+  const cols = Object.keys(raw[0] || {}), K = n => cols.find(c => norm(c).trim() === norm(n));
+  const miss = ['Date accident', "Type d'évènement", 'Structure'].filter(n => !K(n)); if (miss.length) throw new Error('Colonnes introuvables : ' + miss.join(', '));
+  const ids = {}, keyCount = {}, rows = []; let nid = 0;
+  const pre = raw.filter(r => /maladie/i.test(r[K("Type d'évènement")] || '')).map(r => {
+    const d = toDate(r[K('Date accident')]); if (!d) return null;
+    const t = norm(r[K('Nature accident')]).replace(/\n/g, ' '), nat = norm(r[K("Nature d'évènement")]);
+    let zs = [1, 2, 3, 4, 5].map(i => zoneSiege(r[K('Siège ' + i)])).filter(Boolean); if (!zs.length) zs = zonesText(t);
+    const m = {}; zs.forEach(([z, s]) => { m[z] = m[z] && s && m[z] !== s ? 'B' : (s || m[z] || ''); });
+    const dos = String(r[K('N° dossier')] || ''), mm = /^[AM]?0*(\d{3,5})/.exec(dos), agent = K('Matricule') && r[K('Matricule')] ? String(r[K('Matricule')]) : (/^[AM]?\d{4,}/.test(dos) && mm ? mm[1] : dos);
+    const p = pathoOf(t, Object.entries(m)), f = famOf(t, p, nat), st = String(r[K('Structure')] || '').trim(), [dir, conf] = dirOf(st), sd = toDate(r[K('Date de saisie')]);
+    const mc = /Catégorie ([ABC])/i.exec(String(r[K('Catégorie statutaire')] || '')), tb = /57\s*([abcd])/.exec(t), key = agent + '|' + iso(d);
+    keyCount[key] = (keyCount[key] || []).concat(p);
+    return { key, row: [iso(d), String(r[K('Sexe')] || '').trim(), parseInt(r[K('Age')]) || 0, String(r[K('Statut de paie')] || '').trim() === 'CNR' ? 'F' : 'C', mc ? mc[1].toUpperCase() : 'Hors cat.',
+      FAM_S[norm(r[K("Cadre d'emploi")]).trim()] || S_FIL[7], dir, st, f, p, Object.entries(m).map(([z, s]) => z + ':' + s).join('|'), tb ? '57' + tb[1].toUpperCase() : '',
+      /avec/i.test(r[K('Conséquence')] || '') ? 1 : 0, (agent in ids) ? ids[agent] : (ids[agent] = nid++), sd ? Math.round((sd - d) / 864e5) : 0, +empty(r[K('Nature accident')]), 0, +dos.startsWith('A'),
+      +(/phosphore|chimi|infect|bruit/.test(nat) && f === M_FAM[0]), conf, +/autres maladies/.test(nat)] };
+  }).filter(Boolean);
+  pre.forEach(({ key, row }) => { const ps = keyCount[key]; if (ps.length > 1 && (ps.includes(M_PATHO[6]) || new Set(ps).size < ps.length)) row[16] = 1; rows.push(row); });
+  return { rows, types: {} };
+}
+
+/* --- agrégats --- */
+const zoneCount = (x, z) => x.filter(r => r.zones.split('|').some(p => p.split(':')[0] === z)).length;
+function zSide(x, z) { const o = { D: 0, G: 0, B: 0, N: 0 }; x.forEach(r => r.zones.split('|').forEach(p => { const [k, s] = p.split(':'); if (k === z) o[s || 'N']++; })); return o; }
+function scopeM(x) {
+  const agents = {}; x.forEach(r => agents[r.ag] = (agents[r.ag] || 0) + 1); const mult = Object.values(agents).filter(v => v > 1);
+  return { n: x.length, arret: x.filter(r => r.arret).length, age: x.length ? Math.round(10 * x.reduce((s, r) => s + r.age, 0) / x.length) / 10 : 0, known: x.filter(r => r.patho !== M_PATHO[6]).length,
+    sexe: rate(x, 'sexe', ['Femme', 'Homme']), ages: rate(x, 'tage', AGES), statut: rate(x, 'statut', STATUTS), cat: rate(x, 'cat', ['A', 'B', 'C', 'Hors cat.']),
+    filiere: rate(x, 'filiere', S_FIL), dir: rate(x, 'dir', DIRCODES), fam: cnt(x, 'fam', M_FAM), patho: cnt(x, 'patho', M_PATHO),
+    zone: Object.fromEntries(ZK.map(z => [M_ZONES[z], zoneCount(x, z)])), mois: [...Array(12)].map((_, m) => x.filter(r => r.m === m).length), saison: cnt(x, 'saison', SAISONS),
+    multiAgents: mult.length, multiRows: mult.reduce((a, b) => a + b, 0), multiMax: Math.max(0, ...mult), rows: x };
+}
+function detectM(D, key) {
+  const s = D.scopes[key], x = s.rows, A = []; if (!x.length) return A;
+  const add = (lvl, hs, t, txt) => A.push({ lvl, hs, title: t, text: txt });
+  const ep = zoneCount(x, 'epaule'); if (s.n >= 8 && ep / s.n >= .35) add('warn', 'epaule', `${pc(ep, s.n)} des MP touchent l'épaule`, "Tendinopathies de la coiffe des rotateurs (tableau 57A) : bras levés, gestes répétés au-dessus des épaules. Étudier l'aménagement des postes d'entretien et de restauration.");
+  const cc = s.patho[M_PATHO[1]]; if (cc >= 4) add('warn', 'poignet', `${cc} syndromes du canal carpien`, 'Gestes répétitifs et serrages (essorage, pulvérisateurs, épluchage) : matériel ergonomique, rotation des tâches.');
+  const bi = x.filter(r => /:B/.test(r.zones)).length; if (bi >= 3) add('info', 'poignet', `${bi} atteintes bilatérales`, 'Les deux côtés touchés : signe d\'une sollicitation installée, prise en charge et aménagement du poste à prioriser.');
+  if (s.multiAgents) add(s.multiMax >= 3 ? 'crit' : 'warn', 'profil', `${s.multiAgents} agents avec plusieurs MP`, `${s.multiRows} déclarations, jusqu'à ${s.multiMax} pour un même agent. Suivi médical renforcé et étude de reclassement ou d'aménagement durable.`);
+  const p50 = s.ages['50-59 ans'][0] + s.ages['60 ans et +'][0]; if (s.n >= 10 && p50 / s.n >= .5) add('info', 'profil', `${pc(p50, s.n)} des MP chez les 50 ans et plus`, 'Usure professionnelle : anticiper la prévention de la désinsertion professionnelle (visite de mi-carrière, aménagements).');
+  if (dirFilter === 'all') { const ref = rateM(D, key, 'all');
+    DIRCODES.forEach(c => { const d = s.dir[c]; if (!d || d[0] < 4) return; const r = dirRateM(D, key, c);
+      if (r && ref && r >= ref * 1.5) add(r >= ref * 2.5 ? 'crit' : 'warn', 'profil', `${c} : ${f1(r)} MP par an pour 100 postes`, `${DIRS[c][0]} : ${f1(r / ref)} fois le niveau de la collectivité (${f1(ref)}). Indicateur approché (postes de l'organigramme 2026).`); }); }
+  const st = {}; x.forEach(r => st[r.struct] = (st[r.struct] || 0) + 1);
+  Object.entries(st).filter(([k, v]) => k && v >= (key === 'all' ? 8 : 4)).sort((a, b) => b[1] - a[1]).slice(0, 3).forEach(([k, v]) => add('warn', 'profil', `${v} MP : ${title(k)}`, 'Équipe au-dessus du seuil : analyse ergonomique des postes et du matériel.'));
+  const Y = D.years; if (Y.length > 2 && key === 'all') { const last = Y.at(-1), avg = Y.slice(0, -1).reduce((t, y) => t + y.n, 0) / (Y.length - 1);
+    if (last.n < avg * .5) add('info', 'horloge', `${last.y} : ${last.n} MP seulement`, `Contre ${f1(avg)} par an en moyenne : délai de déclaration et de reconnaissance, l'année n'est pas complète.`); }
+  const nr = s.fam['Non précisée']; if (nr >= 3) add('warn', 'familles', `${nr} MP sans pathologie ni localisation`, 'Famille de risque inconnue : compléter le récit et les sièges à partir du certificat médical.');
+  const zero = M_FAM.slice(1, 5).filter(f => !s.fam[f]); if (zero.length === 4 && key === 'all') add('info', 'familles', 'Aucune MP chimique, biologique, physique ou psychosociale', 'Possible sous-déclaration : produits d\'entretien (eczéma, asthme), exposition au sang, bruit des cantines, risques psychosociaux.');
+  const dup = x.filter(r => r.doublon).length; if (dup) add('warn', 'archives', `${dup} déclarations en doublon probable`, 'Même agent, même date, pathologie identique ou non décrite : vérifier dans grdInfos.');
+  const pa = x.filter(r => r.prefA).length; if (pa >= 3) add('warn', 'archives', `${pa} dossiers numérotés comme des accidents (« A… »)`, 'Souvent sans récit ni pathologie : vérifier le type d\'évènement.');
+  const er = x.filter(r => r.eRecit).length; if (er / s.n >= .4) add('warn', 'archives', `Pathologie non décrite dans ${pc(er, s.n)} des déclarations`, 'Saisir la pathologie du certificat (ex. « tendinopathie du supra-épineux droit, tableau 57A »).');
+  const au = x.filter(r => r.autres && r.fam === M_FAM[0]).length; if (au >= 5) add('info', 'archives', `${au} TMS saisis en « Autres maladies »`, 'Choisir la nature « Affections périarticulaires (gestes et postures) » pour les TMS.');
+  const ic = x.filter(r => r.incoh).length; if (ic) add('info', 'archives', `${ic} nature d'évènement incohérente`, 'Ex. « contact avec le phosphore » pour une sciatique : corriger la nature.');
+  const o = { crit: 0, warn: 1, info: 2 }; return A.sort((a, b) => o[a.lvl] - o[b.lvl]);
+}
+function dirRateM(D, key, code) {
+  const posts = code === 'all' ? DIRCODES.reduce((t, c) => t + (DIRS[c][2] || 0), 0) : (DIRS[code] || [])[2]; if (!posts) return null;
+  const rows = ALL.mp.filter(r => code === 'all' || r.dir === code), ys = [...new Set(ALL.mp.map(r => r.y))].sort(), full = ys.length > 2 ? ys.slice(0, -1) : ys;
+  if (key === 'all') return full.reduce((s, y) => s + rows.filter(r => r.y === y).length, 0) / full.length / posts * 100;
+  return rows.filter(r => r.y === +key).length / posts * 100;
+}
+const rateM = (D, key, code) => dirRateM(D, key, code === 'all' && dirFilter !== 'all' ? dirFilter : code);
+
+/* --- points cliquables et fiches --- */
+const ZONE_HS = {
+  epaule: { label: 'Épaules', zones: ['epaule'], ti: "Épaules : tendinopathies de la coiffe des rotateurs", reco: "Limiter les bras levés au-dessus des épaules : manches télescopiques, chariots à hauteur, rangement entre la taille et les épaules, rotation des tâches (tableau 57A)." },
+  coude: { label: 'Coudes', zones: ['coude', 'bras'], ti: 'Coudes et bras : épicondylites', reco: "Réduire les gestes de préhension en force et les torsions (essorage, serrage, port de seaux) : matériel à faible effort, poignées adaptées (tableau 57B)." },
+  poignet: { label: 'Poignets et mains', zones: ['poignet'], ti: 'Poignets et mains : canal carpien et tendinites', reco: "Gestes répétitifs et pressions : balais et pulvérisateurs ergonomiques, alternance des tâches, pauses actives, suivi médical précoce des fourmillements (tableau 57C)." },
+  rachis: { label: 'Dos', zones: ['rachis'], ti: 'Rachis lombaire', reco: 'Manutention et postures : aides à la manutention, formation PRAP, organisation des charges (tableau 98 pour les lombalgies liées aux charges lourdes).' },
+  membresinf: { label: 'Genoux et chevilles', zones: ['genou', 'cheville'], ti: 'Membres inférieurs', reco: "Positions agenouillées ou accroupies prolongées : genouillères, matériel à manche long, aménagement des tâches au sol (tableau 79)." },
+};
+const ICONS_M = {
+  epaule: '<circle cx="12" cy="5" r="2.5"/><path d="M5 12c2-3 12-3 14 0M8 11v9M16 11v9"/>', coude: '<path d="M6 4v8l8 6M14 18l4-2"/><circle cx="6" cy="12" r="1.5"/>',
+  poignet: '<path d="M8 21v-7l-2-3V5h2v5h1V3h2v7h1V4h2v6h1V6h2v7l-2 3v5"/>', rachis: '<path d="M12 2v20"/><path d="M9 5h6M8 9h8M9 13h6M8 17h8"/>',
+  membresinf: '<path d="M9 3v8l-1 10M15 3v8l1 10"/><circle cx="9" cy="12" r="1.3"/><circle cx="15" cy="12" r="1.3"/>',
+  familles: '<rect x="3" y="12" width="4" height="9"/><rect x="10" y="7" width="4" height="14"/><rect x="17" y="3" width="4" height="18"/>',
+  profil: ICONS_S.profil, horloge: ICONS_S.horloge, archives: ICONS_S.archives,
+};
+// silhouette unique au centre, tournée de 45° vers la caméra ; articulations en repère local (x > 0 = côté gauche de la personne)
+const BS = 1.45; // échelle du corps
+const J = { epaule: [1.32, 8.5], coude: [1.62, 6.8], poignet: [1.82, 5.15], genou: [.55, 3.0], cheville: [.55, .6], rachis: [0, 6.3] };
+const toWorld = (lx, y, lz = 0) => { const c = Math.SQRT1_2 * BS; return [lx * c + lz * c, .45 + y * BS, -lx * c + lz * c]; };
+const colL = y => [-4.4, y, 4.4], colR = y => [4.4, y, -4.4]; // points à gauche et à droite de la silhouette
+const HS_M = { epaule: { label: ZONE_HS.epaule.label, pos: colL(13.6) }, coude: { label: ZONE_HS.coude.label, pos: colL(10.2) }, poignet: { label: ZONE_HS.poignet.label, pos: colL(6.8) },
+  rachis: { label: ZONE_HS.rachis.label, pos: colR(9.6) }, membresinf: { label: ZONE_HS.membresinf.label, pos: colR(4.6) }, familles: { label: 'Familles de risque', pos: [-15, 4.2, 9] },
+  profil: { label: 'Qui est concerné ?', pos: [12.5, 2.8, 4] }, horloge: { label: 'Calendrier', pos: [9, 7.2, -11] }, archives: { label: 'Qualité des données', pos: [17, 4.2, -3] } };
+const zoneN = (s, id) => s.rows.filter(r => r.zones.split('|').some(p => ZONE_HS[id].zones.includes(p.split(':')[0]))).length;
+const badge_M = { ...Object.fromEntries(Object.keys(ZONE_HS).map(k => [k, s => zoneN(s, k)])), familles: s => s.fam[M_FAM[0]], profil: s => s.n, horloge: s => s.n, archives: () => null };
+const BADGE_LABEL_M = { epaule: 'MP touchant les épaules', coude: 'MP touchant les coudes ou les bras', poignet: 'MP touchant les poignets ou les mains', rachis: 'MP touchant le dos', membresinf: 'MP touchant genoux ou chevilles', familles: 'MP de la famille TMS', profil: 'MP déclarées', horloge: 'MP déclarées' };
+function zoneFiche(id) {
+  return s => {
+    const Z = ZONE_HS[id], x = s.rows.filter(r => r.zones.split('|').some(p => Z.zones.includes(p.split(':')[0]))), n = x.length, a = x.filter(r => r.arret).length;
+    const sd = { D: 0, G: 0, B: 0, N: 0 }; Z.zones.forEach(z => { const o = zSide(x, z); for (const k in sd) sd[k] += o[k]; });
+    const by = (f, keys) => keys.map(k => { const g = x.filter(r => r[f] === k); return [k, g.length, g.filter(r => r.arret).length]; }).filter(e => e[1]);
+    const st = {}; x.forEach(r => st[r.struct] = (st[r.struct] || 0) + 1);
+    return { ey: 'Zone du corps', ti: Z.ti, html: `<div class="big"><b>${n}</b><span>maladies professionnelles touchant cette zone, soit ${pc(n, s.n)} des MP</span></div>
+      <div class="duo"><div><b>${x.filter(r => r.sexe === 'Femme').length} · ${x.filter(r => r.sexe === 'Homme').length}</b><small>femmes · hommes</small></div><div><b>${pc(a, n)}</b><small>avec arrêt (moyenne ${pc(s.arret, s.n)})</small></div></div>
+      ${sec('Côté atteint', bars([['Droit', sd.D], ['Gauche', sd.G], ['Bilatéral', sd.B], ['Non précisé', sd.N]].filter(e => e[1]), n, { cls: 'hot' }))}
+      ${sec('Pathologies', bars(by('patho', M_PATHO), n, { rate: true }))}
+      ${dirFilter === 'all' ? sec('Par direction', bars(by('dir', DIRCODES).sort((p, q) => q[1] - p[1]).map(([k, v, ar]) => [`${k} · ${DIRS[k][1]}`, v, ar]), n, { rate: true })) : ''}
+      ${sec('Équipes les plus touchées', bars(Object.entries(st).sort((p, q) => q[1] - p[1]).slice(0, 6).map(([k, v]) => [title(k || 'Non renseignée'), v]), n))}
+      ${sec("Tranche d'âge", bars(by('tage', AGES), n))}
+      ${reco(Z.reco)}` };
+  };
+}
+const FICHES_M = Object.fromEntries(Object.keys(ZONE_HS).map(k => [k, zoneFiche(k)]));
+FICHES_M.familles = s => ({ ey: 'Familles de risque', ti: 'TMS, chimique, biologique, physique, psychosocial', html:
+  `<div class="big"><b>${pc(s.fam[M_FAM[0]], s.n)}</b><span>des maladies professionnelles sont des TMS (troubles musculo-squelettiques)</span></div>
+  ${sec('Familles de risque', bars(M_FAM.map(f => { const g = s.rows.filter(r => r.fam === f); return [f, g.length, g.filter(r => r.arret).length]; }), s.n, { rate: true }))}
+  <p class="insight">Aucune MP chimique, biologique, physique ou psychosociale n'est enregistrée : c'est rare dans une collectivité qui utilise des <strong>produits d'entretien</strong>, soigne et accueille du public. Une <strong>sous-déclaration</strong> est probable.</p>
+  ${sec('Pathologies (famille TMS)', bars(M_PATHO.filter(p => p !== 'Non précisée').map(p => [p, s.patho[p]]), s.n))}
+  ${sec('Tableaux cités dans les récits', bars([['57A · épaule', s.rows.filter(r => r.tableau === '57A').length], ['57B · coude', s.rows.filter(r => r.tableau === '57B').length], ['57C · poignet, main', s.rows.filter(r => r.tableau === '57C').length]], s.n))}
+  ${reco('Informer les agents et les médecins sur les autres familles reconnues (dermatoses et asthme aux produits d\'entretien, tableaux 65 et 66 ; risques biologiques ; surdité) et vérifier la nature d\'évènement saisie.')}` });
+FICHES_M.profil = s => {
+  const rows = DIRCODES.map(c => [c, s.dir[c][0], s.dir[c][1], dirRateM(DATA, year, c)]).filter(e => e[1]).sort((a, b) => b[1] - a[1]), max = Math.max(1, ...rows.map(e => e[1])), ref = dirRateM(DATA, year, 'all');
+  return { ey: 'Agents et directions', ti: 'Qui est concerné ?', html:
+    `<div class="big"><b>${s.n}</b><span>maladies professionnelles · âge moyen ${f1(s.age)} ans · ${pc(s.sexe['Femme'][0], s.n)} de femmes</span></div>
+    <p class="insight">Les MP touchent surtout des <strong>agentes d'entretien et de restauration de plus de 45 ans</strong> (DER), puis les agents des écoles et de la petite enfance (DEPE).</p>
+    ${dirFilter === 'all' ? sec(`Par direction · MP par an pour 100 postes (collectivité ${f1(ref)})`, rows.map(([c, n, a, r]) => `<div class="br"><span class="bl" title="${DIRS[c][0]}">${c} · ${DIRS[c][1]}</span><span class="bt"><i class="${r && ref && r >= ref * 1.5 ? 'hot' : ''}" style="width:${100 * n / max}%"></i></span><span class="bv">${n} <em>${pc(a, n)} arrêt</em><span class="rt">${r ? f1(r) : '–'}</span></span></div>`).join('')) : ''}
+    ${sec('Sexe', bars(R(s.sexe), s.n, { rate: true }))}
+    ${sec("Tranche d'âge", bars(R(s.ages), s.n, { rate: true }))}
+    ${sec('Statut', bars(R(s.statut).map(([k, n, a]) => [k.replace('Fonctionnaire (CNRACL)', 'Fonctionnaires').replace('Contractuel / régime général', 'Contractuels / RG'), n, a]), s.n, { rate: true }))}
+    ${sec('Filière', bars(R(s.filiere), s.n, { rate: true, cls: 'tl' }))}
+    <p class="note">${s.multiAgents} agents ont plusieurs MP. Taux approché : MP par an rapportées aux postes des organigrammes 2026.</p>` };
+};
+FICHES_M.horloge = FICHES_T.horloge;
+FICHES_M.archives = s => { const c = f => s.rows.filter(r => r[f]).length;
+  return { ey: 'Qualité des données', ti: 'Ce que les déclarations ne disent pas', html:
+    `<div class="big"><b>${pc(c('eRecit'), s.n)}</b><span>des déclarations ne décrivent pas la pathologie</span></div>
+    ${sec('Contrôles', bars([['Pathologie non décrite', c('eRecit')], ['Aucune localisation', s.rows.filter(r => !r.zones).length], ['Doublon probable', c('doublon')], ['N° de dossier « A… »', c('prefA')], ['TMS saisis en « Autres maladies »', s.rows.filter(r => r.autres && r.fam === M_FAM[0]).length], ['Nature incohérente', c('incoh')], ['Rattachement à confirmer', c('conf')]], s.n, { cls: 'hot' }))}
+    ${reco('Saisir la pathologie et le tableau du certificat médical, la nature « Affections périarticulaires » pour les TMS, et vérifier les doublons et les dossiers « A… ».')}` }; };
+const IND_M = [['MP déclarées', s => s.n, 'n', 1], ['Avec arrêt de travail', s => s.arret, 'n', 1], ['Part avec arrêt', s => s.n ? s.arret / s.n : 0, 'p', 1],
+  ['Femmes', s => s.n ? s.sexe['Femme'][0] / s.n : 0, 'p', 0], ['50 ans et plus', s => s.n ? (s.ages['50-59 ans'][0] + s.ages['60 ans et +'][0]) / s.n : 0, 'p', 0], ['Âge moyen', s => s.age, 'a', 0],
+  ['TMS', s => s.fam[M_FAM[0]], 'n', 1], ...Object.entries(ZONE_HS).map(([k, z]) => [z.label, s => zoneN(s, k), 'n', 1]), ['Non précisées', s => s.fam['Non précisée'], 'n', 1]];
+
+/* ---------------------------------------------------------------- scène : les corps */
+const gM = new THREE.Group(); scene.add(gM); gM.visible = false; ROOT = gM;
+box(38, 1.4, 28, tm.side, 0, -1.4, 0); box(38, .02, 28, tm.ground, 0, 0, 0);
+const skinM = new THREE.MeshStandardMaterial({ color: '#8FA6C4', roughness: .38, metalness: .05 }), jointM = new THREE.MeshStandardMaterial({ color: '#3F5B86', roughness: .35, metalness: .05 });
+// membre arrondi tendu entre deux articulations
+function limb(a, b, r, mat, parent) {
+  const A = new THREE.Vector3(...a), d = new THREE.Vector3(...b).sub(A), m = new THREE.Mesh(new THREE.CapsuleGeometry(r, d.length(), 8, 20), mat);
+  m.position.copy(A).addScaledVector(d, .5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); m.castShadow = true; parent.add(m); return m;
+}
+const ball = (r, mat, x, y, z, parent, s = [1, 1, 1]) => { const m = new THREE.Mesh(new THREE.SphereGeometry(r, 28, 20), mat); m.position.set(x, y, z); m.scale.set(...s); m.castShadow = true; parent.add(m); return m; };
+const heat = {};
+const halo = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'), r = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(.35, 'rgba(255,255,255,.45)'); r.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = r; g.fillRect(0, 0, 128, 128); return new THREE.CanvasTexture(c); })();
+const body = new THREE.Group(); body.position.y = .45; body.rotation.y = Math.PI / 4; body.scale.setScalar(BS); gM.add(body);
+const pod = new THREE.Mesh(new THREE.CylinderGeometry(3.3, 3.5, .45, 56), fixed('#E4E9F0')); pod.position.y = -.22; pod.receiveShadow = true; body.add(pod);
+const podRing = new THREE.Mesh(new THREE.TorusGeometry(3.4, .035, 8, 96), fixed('#172A56')); podRing.rotation.x = Math.PI / 2; podRing.position.y = .01; body.add(podRing);
+[-1, 1].forEach(sx => {
+  const x = sx * J.genou[0];
+  limb([x, 4.95, 0], [x, J.genou[1], .05], .4, skinM, body); limb([x, J.genou[1], .05], [x, J.cheville[1], 0], .29, skinM, body);
+  limb([x, .24, -.1], [x * 1.08, .24, .62], .2, skinM, body);
+  ball(.33, jointM, x, J.genou[1], .05, body); ball(.25, jointM, x, J.cheville[1], 0, body);
+  limb([sx * J.epaule[0], J.epaule[1], 0], [sx * J.coude[0], J.coude[1], .05], .25, skinM, body);
+  limb([sx * J.coude[0], J.coude[1], .05], [sx * J.poignet[0], J.poignet[1], .2], .2, skinM, body);
+  ball(.3, skinM, sx * 1.88, 4.72, .25, body, [.75, 1.25, .5]);
+  ball(.35, jointM, sx * J.epaule[0], J.epaule[1], 0, body); ball(.24, jointM, sx * J.coude[0], J.coude[1], .05, body); ball(.19, jointM, sx * J.poignet[0], J.poignet[1], .2, body);
+});
+ball(.95, skinM, 0, 5.2, 0, body, [1.15, .62, .72]);
+const torso = new THREE.Mesh(new THREE.LatheGeometry([[0, 5.35], [.8, 5.4], [.92, 5.7], [.84, 6.3], [.9, 6.9], [1.08, 7.6], [1.18, 8.2], [1.05, 8.65], [.6, 8.95], [.25, 9.05], [0, 9.07]].map(([r, y]) => new THREE.Vector2(r, y)), 48), skinM);
+torso.scale.z = .6; torso.castShadow = true; body.add(torso);
+const neck = new THREE.Mesh(new THREE.CylinderGeometry(.24, .28, .5, 20), skinM); neck.position.y = 9.25; body.add(neck);
+ball(.74, skinM, 0, 10.15, 0, body, [.9, 1.1, .95]);
+// zones lumineuses (côté droit de la personne = x négatif)
+const spots = { epaule: [J.epaule[0], J.epaule[1], .15], coude: [J.coude[0], J.coude[1], .2], bras: [1.47, 7.65, .15], poignet: [1.86, 4.95, .3], genou: [J.genou[0], J.genou[1], .4], cheville: [J.cheville[0], J.cheville[1], .25] };
+const hm = (key, x, y, z) => {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(.34, 24, 16), new THREE.MeshStandardMaterial({ color: '#E0A100', emissive: new THREE.Color('#E0A100'), emissiveIntensity: .7, transparent: true, opacity: .9 }));
+  const h = new THREE.Sprite(new THREE.SpriteMaterial({ map: halo, color: '#E0A100', transparent: true, opacity: .55, depthWrite: false, blending: THREE.AdditiveBlending })); h.scale.setScalar(2.1); m.add(h); m.userData.halo = h;
+  m.position.set(x, y, z); m.visible = false; body.add(m); heat[key] = m;
+};
+Object.entries(spots).forEach(([z, [x, y, zz]]) => { hm(z + ':D', -x, y, zz); hm(z + ':G', x, y, zz); });
+const ring = new THREE.Mesh(new THREE.TorusGeometry(.95, .12, 12, 48), new THREE.MeshStandardMaterial({ color: '#E0A100', emissive: new THREE.Color('#E0A100'), emissiveIntensity: .7, transparent: true, opacity: .9 }));
+ring.rotation.x = Math.PI / 2; ring.scale.y = .66; ring.position.y = J.rachis[1]; ring.visible = false; body.add(ring); heat['rachis:D'] = ring;
+// traits reliant chaque point à sa zone
+const lineM = new THREE.LineDashedMaterial({ color: '#8C99AD', dashSize: .35, gapSize: .25, transparent: true, opacity: .8 });
+[['epaule', toWorld(-J.epaule[0] - .2, J.epaule[1], .1)], ['coude', toWorld(-J.coude[0] - .15, J.coude[1], .1)], ['poignet', toWorld(-1.95, 4.9, .25)], ['rachis', toWorld(.9, J.rachis[1])], ['membresinf', toWorld(J.genou[0] + .3, J.genou[1], .1)]]
+  .forEach(([k, p]) => { const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...HS_M[k].pos), new THREE.Vector3(...p)]), lineM); l.computeLineDistances(); gM.add(l); });
+// plaque de synthèse
+const plCv = document.createElement('canvas'); plCv.width = 768; plCv.height = 128; const plTex = new THREE.CanvasTexture(plCv);
+const pl = new THREE.Mesh(new THREE.PlaneGeometry(5.4, .9), new THREE.MeshBasicMaterial({ map: plTex, transparent: true })); pl.position.set(0, .1, 3.75); pl.rotation.x = -.35; body.add(pl);
+body.userData.hotspot = 'profil';
+// décor : panneau des familles, colonne-horloge, classeur, plantes
+const gFam = group(-15, 9, .3, 'familles'); box(4.2, .3, 1.2, C.navy, 0, 0, 0, gFam);
+const famBars = M_FAM.slice(0, 5).map((f, i) => box(.6, 1, .6, [C.red, C.orange, C.teal, C.blue, fixed('#7A4FA3')][i], -1.6 + i * .8, .3, 0, gFam));
+const gHorM = group(9, -11, .4, 'horloge'); box(1.3, 5, 1.3, tm.wall, 0, 0, 0, gHorM); box(1.7, .3, 1.7, C.navy, 0, 5, 0, gHorM);
+const fM = new THREE.Mesh(new THREE.CylinderGeometry(.45, .45, .05, 24), fixed('#FFFFFF')); fM.rotation.x = Math.PI / 2; fM.position.set(0, 4.2, .67); gHorM.add(fM);
+const handM = new THREE.Group(); handM.position.set(0, 4.2, .71); gHorM.add(handM); const hM = new THREE.Mesh(new THREE.BoxGeometry(.05, .34, .03), C.red); hM.position.y = .14; handM.add(hM);
+const gArM = group(17, -3, .5, 'archives'); box(1.6, 2.6, 1.2, C.grey, 0, 0, 0, gArM); [.5, 1.2, 1.9].forEach(y => box(1.3, .4, .05, C.dark, 0, y, .62, gArM));
+const gProM = group(12.5, 4, .6, 'profil'); box(2.6, .9, 1.4, fixed('#E9EDF3'), 0, 0, 0, gProM); box(2.8, .12, 1.6, C.navy, 0, .9, 0, gProM);
+tree(-15, 10, 1); tree(15, -10, 1); tree(-16, -9, .9); tree(16, 10, .8);
+ROOT = gT;
+function updateBodies(s) {
+  const cnt = {};
+  s.rows.forEach(r => r.zones.split('|').forEach(p => { if (!p) return; const [z, sd] = p.split(':'); const keys = z === 'rachis' ? ['rachis:D'] : sd === 'B' || sd === '' ? [z + ':D', z + ':G'] : [z + ':' + sd]; keys.forEach(k => cnt[k] = (cnt[k] || 0) + 1); }));
+  const max = Math.max(1, ...Object.values(cnt));
+  Object.entries(heat).forEach(([k, m]) => { const v = cnt[k] || 0; m.visible = v > 0; if (!v) return;
+    const t = v / max, col = new THREE.Color('#F2C46D').lerp(new THREE.Color(t > .5 ? '#B7001C' : '#D64545'), Math.min(1, t * 1.4));
+    m.material.color.copy(col); m.material.emissive.copy(col); if (m.userData.halo) m.userData.halo.material.color.copy(col);
+    m.userData.base = k === 'rachis:D' ? 1 : .7 + .6 * Math.sqrt(t); m.userData.n = v; });
+  const f = s.rows.filter(r => r.sexe === 'Femme').length, g = plCv.getContext('2d'); g.clearRect(0, 0, 768, 128);
+  g.fillStyle = '#172A56'; g.beginPath(); g.roundRect ? g.roundRect(8, 8, 752, 112, 30) : g.rect(8, 8, 752, 112); g.fill();
+  g.fillStyle = '#fff'; g.font = '700 42px Figtree, Arial'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(`${s.n} MP · ${f} femmes · ${s.n - f} hommes`, 384, 68); plTex.needsUpdate = true;
+  const tot = Math.max(1, s.n); famBars.forEach((b, i) => { const v = s.fam[M_FAM[i]] || 0; b.scale.y = Math.max(.05, 4 * v / tot); b.position.y = .3 + b.scale.y / 2; });
+}
+function animM(dt) {
+  if (!gM.visible) return;
+  Object.values(heat).forEach(m => { if (!m.visible) return; const p = 1 + Math.sin(T * 3 + m.position.y) * .12; m.scale.setScalar((m.userData.base || 1) * p); m.material.emissiveIntensity = .5 + .35 * (p - .88) / .24; });
+  torso.scale.x = 1 + Math.sin(T * 1.6) * .012; lineM.dashOffset = -T * .4; handM.rotation.z = -T * .6;
+}
+function kpisM(s) {
+  updateBodies(s);
+  return [['', nb(s.n), 'maladies pro.'], ['red', pc(s.arret, s.n), 'avec arrêt'], ['teal', pc(s.fam[M_FAM[0]], s.n), 'TMS'], ['blue', pc(zoneN(s, 'epaule'), s.n), 'épaule']]
+    .map(([c, v, l]) => `<div class="kpi ${c}"><b>${v}</b><small>${l}</small></div>`).join('');
+}
+ENG.mp = { KEYS: KEYS_M, scope: scopeM, detect: detectM, qf: { 'Récit': 'eRecit' }, HS: HS_M, badge: badge_M, FICHES: FICHES_M, BADGE_LABEL: BADGE_LABEL_M, IND: IND_M,
+  root: gM, kpis: kpisM, store: 'mp-rows', fam: 'patho', archBadge: q => Math.round(q['Récit'] * 100) + '%', bigIds: ['profil', 'horloge', 'archives', 'familles'],
+  h1: 'Maladies <span>professionnelles</span>',
+  CMPDIMS: [['Pathologies', 'patho', () => M_PATHO.filter(p => p !== 'Non précisée')], ['Familles de risque', 'fam', () => M_FAM], ['Zones du corps', 'zone', () => Object.values(M_ZONES)], ['Direction', 'dir', () => DIRCODES],
+    ["Tranche d'âge", 'ages', () => AGES], ['Sexe', 'sexe', () => ['Femme', 'Homme']], ['Catégorie', 'cat', () => ['A', 'B', 'C', 'Hors cat.']], ['Statut', 'statut', () => STATUTS], ['Filière', 'filiere', () => S_FIL]] };
+ENG.trajet.fam = 'circ'; ENG.service.fam = 'circ';
+
+/* ---------------------------------------------------------------- import d'un export Ciril */
+function toast(msg, ms = 6000) { const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), ms); }
+async function importFile(file) {
+  try {
+    const wb = XLSX.read(await file.arrayBuffer(), { type: 'array', cellDates: true });
+    const raw = wb.SheetNames.flatMap(n => XLSX.utils.sheet_to_json(wb.Sheets[n], { defval: '', raw: true }));
+    if (!raw.length) throw new Error('Le fichier ne contient aucune ligne.');
+    const label = `${file.name} (importé le ${fr(new Date())})`, msg = []; let tRows = [], sRows = [], mRows = [], types = {}, err = null;
+    try { mRows = deriveM(raw).rows; } catch (e) {}
+    try { const r = deriveS(raw); sRows = r.rows; types = r.types; } catch (e) { err = e; }
+    try { const r = deriveT(raw); tRows = r.rows; if (!Object.keys(types).length) types = r.types; } catch (e) { err = err || e; }
+    if (mRows.length) { load(mRows, label, 'mp'); try { localStorage.setItem('mp-rows', JSON.stringify({ rows: mRows, label })); } catch (e) {} msg.push(`${mRows.length} maladies professionnelles`); }
+    if (!tRows.length && !sRows.length && !mRows.length) throw err || new Error('Aucun accident de trajet, de service ou du travail dans ce fichier.');
+    if (tRows.length) { load(tRows, label, 'trajet'); try { localStorage.setItem('trajets-rows', JSON.stringify({ rows: tRows, label })); } catch (e) {} msg.push(`${tRows.length} accidents de trajet`); }
+    if (sRows.length) { load(sRows, label, 'service'); try { localStorage.setItem('service-rows', JSON.stringify({ rows: sRows, label })); } catch (e) {} msg.push(`${sRows.length} accidents de travail`); }
+    const got = { trajet: tRows.length, service: sRows.length, mp: mRows.length };
+    setMode(got[MODE] ? MODE : (Object.keys(got).find(k => got[k]) || MODE));
+    const autres = Object.entries(types).filter(([k]) => !/trajet|service|travail|maladie/i.test(k)).map(([k, v]) => `${v} « ${k} »`);
+    toast(`${msg.join(' et ')} chargés.` + (autres.length ? ` Autres types présents : ${autres.join(', ')}.` : '') + ' Le fichier reste sur votre ordinateur.', 9000);
+  } catch (e) { toast('Import impossible : ' + e.message, 9000); }
+}
+$('#importBtn').onclick = () => $('#file').click();
+$('#file').onchange = e => { if (e.target.files[0]) importFile(e.target.files[0]); e.target.value = ''; };
+$('#alertsBtn').onclick = () => current === 'alerts' ? closePanel() : openAlerts();
+$('#cmpBtn').onclick = () => current === 'compare' ? closePanel() : openCompare();
+let dropEl = null;
+addEventListener('dragover', e => { e.preventDefault(); if (!dropEl) { dropEl = document.createElement('div'); dropEl.className = 'drop'; dropEl.textContent = 'Déposez l\'export Ciril ici'; document.body.appendChild(dropEl); } });
+addEventListener('dragleave', e => { if (!e.relatedTarget && dropEl) { dropEl.remove(); dropEl = null; } });
+addEventListener('drop', e => { e.preventDefault(); if (dropEl) { dropEl.remove(); dropEl = null; } const f = e.dataTransfer.files[0]; if (f) importFile(f); });
+
+load(EMB, 'Exemple : extraction grdInfos du 22/10/2026', 'trajet'); load(EMB_S.rows, 'Exemple : extraction grdInfos du 23/10/2026', 'service');
+try { const sv = JSON.parse(localStorage.getItem('trajets-rows') || 'null'); if (sv?.rows?.length) load(sv.rows, sv.label, 'trajet'); } catch (e) {}
+try { const sv = JSON.parse(localStorage.getItem('service-rows') || 'null'); if (sv?.rows?.length) load(sv.rows, sv.label, 'service'); } catch (e) {}
+load(EMB_M.rows, 'Exemple : extraction grdInfos du 23/10/2026', 'mp');
+try { const sv = JSON.parse(localStorage.getItem('mp-rows') || 'null'); if (sv?.rows?.length) load(sv.rows, sv.label, 'mp'); } catch (e) {}
+makeMarkers(HS_T, ICONS_T, gT); makeMarkers(HS_S, ICONS_S, gS); makeMarkers(HS_M, ICONS_M, gM);
+resize(); setMode(location.hash.startsWith('#service') ? 'service' : location.hash.startsWith('#mp') ? 'mp' : 'trajet', true); applyTheme(); tick();
+if (location.hash.includes('comparer')) { if (location.hash.includes('dir')) CMP.kind = 'dirs'; openCompare(); } else if (location.hash === '#alertes' || innerWidth > 760) openAlerts();
+</script>
+
+<style>.type[data-mode],#importBtn{display:none!important}</style>
+<script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+<script>
+(function () {
+  const MODE_G = 'mp', TABLE = 'Maladies_pro', LABEL = 'maladies professionnelles', K = ENG[MODE_G].KEYS;
+  grist.ready({ requiredAccess: 'full' });
+  // fetchTable renvoie les colonnes ; on les remet en lignes dans l'ordre attendu par la maquette
+  async function refresh() {
+    try {
+      const t = await grist.docApi.fetchTable(TABLE), n = (t.id || []).length;
+      load(Array.from({ length: n }, (_, i) => K.map(k => (t[k] || [])[i] ?? '')), `Table Grist « ${TABLE} » · ${n} ${LABEL}`, MODE_G);
+      if (!n) toast(`La table Grist « ${TABLE} » est vide.`, 9000);
+    } catch (e) { load([], `Table Grist « ${TABLE} » introuvable`, MODE_G); toast(`Table Grist « ${TABLE} » illisible : ${e.message}`, 9000); }
+    setMode(MODE_G);
+  }
+  load([], 'Lecture de la table Grist…', MODE_G); setMode(MODE_G);
+  refresh();
+  grist.onRecords(() => refresh());
+})();
+</script>
